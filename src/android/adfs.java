@@ -11,6 +11,7 @@ import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CordovaWebView;
+import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -42,12 +43,15 @@ public class adfs extends CordovaPlugin {
     if (acc != null) {
       try {
         String authToken = accountManager.blockingGetAuthToken(acc, authTokenType, true);
-        callbackContext.success(authToken);
+        //callbackContext.success(authToken);
+        callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, authToken));
       } catch (Exception e) {
-        callbackContext.error(e.getMessage());
+        //callbackContext.error(e.getMessage());
+        callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
       }
     } else {
-      callbackContext.error("Es ist aktuell kein Benutzer eingeloggt.");
+      //callbackContext.error("Es ist aktuell kein Benutzer eingeloggt.");
+      callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, "Es ist aktuell kein Benutzer eingeloggt."));
     }
   }
 
@@ -70,15 +74,18 @@ public class adfs extends CordovaPlugin {
       if (resultCode == cordova.getActivity().RESULT_OK && data != null) {
         JSONObject result = new JSONObject();
         try {
-          result.put("id_token", data.getExtras().getString("id_token"));
-          result.put("access_token", data.getExtras().getString("access_token"));
-          result.put("refresh_token", data.getExtras().getString("refresh_token"));
-          this.callbackContext.success(result);
+          result.put("id_token", data.getExtras().getString("TOKEN_TYPE_ID"));
+          result.put("access_token", data.getExtras().getString("TOKEN_TYPE_ACCESS"));
+          result.put("refresh_token", data.getExtras().getString("TOKEN_TYPE_REFRESH"));
+          //this.callbackContext.success(result);
+          callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, result));
         } catch (JSONException e) {
-          this.callbackContext.error("Error occurred while creating result object.");
+          //this.callbackContext.error("Error occurred while creating result object.");
+          callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
         }
       } else {
-        this.callbackContext.error(data.getExtras().containsKey("error") ? data.getStringExtra("error") : "Ein unbekannter Fehler ist aufgetreten.");
+        //callbackContext.error(data.getExtras().containsKey("error") ? data.getStringExtra("error") : "Ein unbekannter Fehler ist aufgetreten.");
+        callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, data.getExtras().containsKey("error") ? data.getStringExtra("error") : "Ein unbekannter Fehler ist aufgetreten."));
       }
     }
   }
@@ -86,9 +93,11 @@ public class adfs extends CordovaPlugin {
   private void checklogin(CallbackContext callbackContext) {
     Account acc = AccountUtils.getCurrentUser(cordova.getActivity());
     if (acc != null) {
-      callbackContext.success(acc.name);
+      //callbackContext.success(acc.name);
+      callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, acc.name));
     } else {
-      callbackContext.error("Kein Benutzer angemeldet");
+      callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, "Kein Benutzer angemeldet"));
+     // callbackContext.error("Kein Benutzer angemeldet");
     }
   }
 
@@ -103,9 +112,11 @@ public class adfs extends CordovaPlugin {
     if (acc != null) {
       AccountUtils.setAccountData(cordova.getActivity(), acc, RequestManager.ACCOUNT_STATE_KEY, "0");
       authenticator.logout(cordova.getContext());
-      callbackContext.success();
+      //callbackContext.success();
+      callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK,acc.name));
     } else {
-      callbackContext.error("Kein Benutzer angemeldet");
+      //callbackContext.error("Kein Benutzer angemeldet");
+      callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR,"Kein Benutzer angemeldet"));
     }
   }
 
@@ -149,7 +160,6 @@ public class adfs extends CordovaPlugin {
             checklogin(callbackContext);
             break;
         }
-
       }
     });
 
