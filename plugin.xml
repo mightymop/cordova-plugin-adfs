@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
+        id="cordova-plugin-adfs"
+        version="1.0.0">
+
+  <name>adfs</name>
+
+  <engines>
+    <engine name="cordova" version=">=3.4.0"/>
+  </engines>
+
+  <js-module src="www/adfs.js" name="adfs">
+     <clobbers target="adfs" />
+  </js-module>
+
+  <platform name="android">
+	<framework src="com.squareup.okhttp3:okhttp:4.10.0" />
+	<framework src="androidx.browser:browser:1.4.0" />
+	<config-file parent="/manifest/application" target="AndroidManifest.xml">
+		<service android:name="de.mopsdom.adfs.AuthenticatorService" android:exported="true">
+            <intent-filter>
+                <action android:name="android.accounts.AccountAuthenticator" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accounts.AccountAuthenticator"
+                android:resource="@xml/authenticator_user" />
+        </service>
+		<receiver android:enabled="true" android:exported="true" android:name="de.mopsdom.adfs.RemoveReceiver" android:priority="999">
+          <intent-filter>
+            <action android:name="android.accounts.action.ACCOUNT_REMOVED" />
+          </intent-filter>
+        </receiver>
+		<activity android:name="de.mopsdom.adfs.ADFSAuthenticatorActivity"
+				  android:label="ADFSAuthenticatorActivity"
+				  android:theme="@android:style/Theme.NoTitleBar" 
+				  android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode" 
+				  android:enabled="true" 
+				  android:exported="true" 
+				  android:launchMode="singleInstance" 
+				  android:windowSoftInputMode="adjustResize">
+				  <intent-filter android:priority="999">
+					<action android:name="android.intent.action.VIEW" />
+					<category android:name="android.intent.category.DEFAULT" />
+					<category android:name="android.intent.category.BROWSABLE" />
+					<data android:scheme="adfs" android:host="adfs-redirect"  />
+				</intent-filter>
+		</activity>
+    </config-file>
+
+    <config-file target="res/xml/config.xml" parent="/*">		  
+      <feature name="adfs">
+        <param name="android-package" value="de.mopsdom.adfs.adfs"/>
+      </feature>
+	  	
+    </config-file>
+	<config-file target="AndroidManifest.xml" parent="/*">
+		<uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
+		<uses-permission android:name="android.permission.GET_ACCOUNTS" />
+		<uses-permission android:name="android.permission.MANAGE_ACCOUNTS" />
+		<uses-permission android:name="android.permission.INTERNET" />
+	</config-file>
+	
+    <source-file src="src/android/adfs.java" target-dir="src/de/mopsdom/adfs"/>
+	
+	<source-file src="src/android/AccountUtils.java" target-dir="src/de/mopsdom/adfs/utils"/>
+	<source-file src="src/android/Utils.java" target-dir="src/de/mopsdom/adfs/utils"/>
+	
+	<source-file src="src/android/AuthenticatorService.java" target-dir="src/de/mopsdom/adfs"/>
+	<source-file src="src/android/ADFSAuthenticatorActivity.java" target-dir="src/de/mopsdom/adfs"/>
+	<source-file src="src/android/ADFSAuthenticator.java" target-dir="src/de/mopsdom/adfs"/>
+	<source-file src="src/android/RemoveReceiver.java" target-dir="src/de/mopsdom/adfs"/>
+	
+	<source-file src="src/android/HttpException.java" target-dir="src/de/mopsdom/adfs/http"/>
+	<source-file src="src/android/HTTPUtil.java" target-dir="src/de/mopsdom/adfs/http"/>
+	<source-file src="src/android/OkCookieJar.java" target-dir="src/de/mopsdom/adfs/http"/>
+	
+	<source-file src="src/android/RequestManager.java" target-dir="src/de/mopsdom/adfs/request"/>
+	
+	<resource-file src="src/android/authenticator_user.xml" target="res/xml/authenticator_user.xml" />
+	<resource-file src="src/android/account_type_user.xml" target="res/values/account_type_user.xml" />
+	<resource-file src="src/android/adfs_config.xml" target="res/values/adfs_config.xml" />
+
+  </platform>
+
+
+</plugin>
