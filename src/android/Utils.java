@@ -95,7 +95,14 @@ public class Utils {
       int rawProd = ctx.getResources().getIdentifier("production", "raw", ctx.getPackageName());
 
       boolean isDebuggable = (0 != (ctx.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE));
-      InputStream raw = ctx.getResources().openRawResource(isDebuggable ? rawDevel : rawProd);
+      InputStream raw = null;
+      if (rawDevel!=0||rawProd!=0) {
+        raw = ctx.getResources().openRawResource(isDebuggable ? rawDevel : rawProd);
+      }
+      else
+      {
+        raw =  ctx.getAssets().open(isDebuggable?"www/assets/config/development.json":"www/assets/config/production.json");
+      }
 
       int size = raw.available();
       byte[] buffer = new byte[size];
@@ -103,6 +110,7 @@ public class Utils {
       raw.close();
       String result = new String(buffer);
       return new JSONObject(result);
+
     } catch (Exception e) {
       Log.e("cordova-plugin-odic", "getConfigFile: " + e.getMessage());
       return null;

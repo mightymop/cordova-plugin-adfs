@@ -13,6 +13,9 @@ import android.accounts.Account;
 import android.accounts.AccountAuthenticatorResponse;
 import android.accounts.AccountManager;
 import android.accounts.NetworkErrorException;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -26,6 +29,8 @@ import android.webkit.CookieSyncManager;
 import android.webkit.ValueCallback;
 
 import androidx.browser.customtabs.CustomTabsIntent;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 
 import org.json.JSONObject;
 
@@ -211,7 +216,7 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
       AccountUtils.setAccountData(context, acc, RequestManager.ACCOUNT_STATE_KEY, "0");
     }
 
-    CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
+
 
     String strconfig = Utils.getSharedPref(context, "configuration");
     if (strconfig != null) {
@@ -220,10 +225,56 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
       {
         JSONObject configjson = new JSONObject(strconfig);
         Uri uri = Uri.parse(configjson.getString("end_session_endpoint"));
-        CustomTabsIntent customTabsIntent = builder.build();
-        customTabsIntent.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
-        customTabsIntent.launchUrl(context, uri);
+        CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
+        CustomTabsIntent customTabsIntent = builder.build();
+        customTabsIntent.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
+        customTabsIntent.intent.setData(uri);
+       // customTabsIntent.launchUrl(context, uri);
+
+        //Intent i = new Intent(Intent.ACTION_VIEW,uri);
+        //i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        // context.startActivity(i);
+
+
+        PendingIntent pi=null;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+          pi = PendingIntent.getActivity(context,0,
+                  //i
+                  customTabsIntent.intent
+                  ,PendingIntent.FLAG_UPDATE_CURRENT| PendingIntent.FLAG_IMMUTABLE);
+        }else {
+          pi = PendingIntent.getActivity(context,0,
+                  //i
+                  customTabsIntent.intent
+                  ,PendingIntent.FLAG_UPDATE_CURRENT);
+        }
+
+        String CHANNEL_WHATEVER = "SSO ABMELDUNG";
+        NotificationCompat.Builder nbuilder = new NotificationCompat.Builder(context,CHANNEL_WHATEVER)
+                .setContentTitle("Zum Abmelden klicken")
+                .setAutoCancel(true)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setFullScreenIntent(pi, true);
+
+        NotificationManager mgr = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                && mgr.getNotificationChannel(CHANNEL_WHATEVER) == null
+        ) {
+          mgr.createNotificationChannel(new
+                  NotificationChannel(
+                          CHANNEL_WHATEVER,
+                          "Abmeldung",
+                          NotificationManager.IMPORTANCE_HIGH
+                  )
+          );
+        }
+
+        mgr.notify(1010101, nbuilder.build());
+
       } catch (Exception e) {
         Log.e("cordova-plugin-adfs", e.getMessage());
       }

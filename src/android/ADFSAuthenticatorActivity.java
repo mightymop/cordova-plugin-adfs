@@ -125,7 +125,8 @@ public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity {
 
     if (tmp_client_id != null && scope != null && nonce != null && response_type != null) {
       try {
-        AuthorizeFlowTask task = new AuthorizeFlowTask(this, tmp_client_id, scope, nonce, response_type, RequestManager.REDIRECT_URI);
+        String redirecturl = RequestManager.REDIRECT_URI+"/"+getPackageName();
+        AuthorizeFlowTask task = new AuthorizeFlowTask(this, tmp_client_id, scope, nonce, response_type, redirecturl);
         task.execute();
       } catch (Exception e) {
         String err = String.join(" ",errList)+" "+e.getMessage();
@@ -164,10 +165,11 @@ public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity {
         Log.i(TAG, "Requesting access_token with AuthCode : " + authCode);
         try {
 
+          String redirecturl = RequestManager.REDIRECT_URI+"/"+getPackageName();
+
           JSONObject response = requestManager.access_token(
             authCode,
-            tmp_client_id,
-            RequestManager.REDIRECT_URI,
+            tmp_client_id, redirecturl,
             "authorization_code");
 
           didStoreTokens = createOrUpdateAccount(response);

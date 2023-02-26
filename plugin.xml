@@ -32,7 +32,7 @@
         </receiver>
 		<activity android:name="de.mopsdom.adfs.ADFSAuthenticatorActivity"
 				  android:label="ADFSAuthenticatorActivity"
-				  android:theme="@android:style/Theme.NoTitleBar" 
+				  android:theme="@style/noAnimThemeADFS" 
 				  android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode" 
 				  android:enabled="true" 
 				  android:exported="true" 
@@ -42,7 +42,7 @@
 					<action android:name="android.intent.action.VIEW" />
 					<category android:name="android.intent.category.DEFAULT" />
 					<category android:name="android.intent.category.BROWSABLE" />
-					<data android:scheme="adfs" android:host="adfs-redirect"  />
+					<data android:scheme="adfs" android:host="adfs-redirect" android:path="/${packageName}" />
 				</intent-filter>
 		</activity>
     </config-file>
@@ -79,6 +79,8 @@
 	<resource-file src="src/android/authenticator_user.xml" target="res/xml/authenticator_user.xml" />
 	<resource-file src="src/android/account_type_user.xml" target="res/values/account_type_user.xml" />
 	<resource-file src="src/android/adfs_config.xml" target="res/values/adfs_config.xml" />
+	
+	<resource-file src="src/android/adfsthemes.xml" target="res/values/adfsthemes.xml" />
 
   </platform>
 
