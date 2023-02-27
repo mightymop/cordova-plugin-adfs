@@ -226,38 +226,39 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
         JSONObject configjson = new JSONObject(strconfig);
         Uri uri = Uri.parse(configjson.getString("end_session_endpoint"));
 
-        CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
-        CustomTabsIntent customTabsIntent = builder.build();
-        customTabsIntent.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        // CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
+        // CustomTabsIntent customTabsIntent = builder.build();
+        // customTabsIntent.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
 
-        customTabsIntent.intent.setData(uri);
+        // customTabsIntent.intent.setData(uri);
        // customTabsIntent.launchUrl(context, uri);
 
-        //Intent i = new Intent(Intent.ACTION_VIEW,uri);
-        //i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        // context.startActivity(i);
-
+        Intent i = new Intent(Intent.ACTION_VIEW,uri);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        context.startActivity(i);
 
         PendingIntent pi=null;
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
           pi = PendingIntent.getActivity(context,0,
-                  //i
-                  customTabsIntent.intent
+                  i
+                  //customTabsIntent.intent
                   ,PendingIntent.FLAG_UPDATE_CURRENT| PendingIntent.FLAG_IMMUTABLE);
         }else {
           pi = PendingIntent.getActivity(context,0,
-                  //i
-                  customTabsIntent.intent
+                  i
+                  // customTabsIntent.intent
                   ,PendingIntent.FLAG_UPDATE_CURRENT);
         }
 
         String CHANNEL_WHATEVER = "SSO ABMELDUNG";
         NotificationCompat.Builder nbuilder = new NotificationCompat.Builder(context,CHANNEL_WHATEVER)
-                .setContentTitle("Zum Abmelden klicken")
+                .setContentTitle("Abmeldung")
+                .setContentText("Klicken Sie, um die Abmeldung durchzuführen!")
                 .setAutoCancel(true)
+                .setSmallIcon(Utils.getLogoutIconIdentifier(context))
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setFullScreenIntent(pi, true);
+                .setContentIntent(pi);
 
         NotificationManager mgr = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
