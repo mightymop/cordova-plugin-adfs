@@ -2,7 +2,12 @@ package de.mopsdom.adfs;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
+import android.accounts.AccountManagerCallback;
+import android.accounts.AccountManagerFuture;
+import android.accounts.AuthenticatorException;
+import android.accounts.OperationCanceledException;
 import android.content.Intent;
+import android.os.Bundle;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -16,6 +21,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
+
 import de.mopsdom.adfs.request.RequestManager;
 import de.mopsdom.adfs.utils.AccountUtils;
 import de.mopsdom.adfs.utils.Utils;
@@ -25,6 +32,7 @@ public class adfs extends CordovaPlugin {
   private final static String TAG = "ADFS_PLUGIN";
 
   private final static int LOGIN_RES = 110;
+  private final static int LOGIN_REAUTH = 111;
 
   private JSONObject request;
 
@@ -37,21 +45,46 @@ public class adfs extends CordovaPlugin {
     authenticator = new ADFSAuthenticator(cordova.getContext());
   }
 
-  private void getToken(CallbackContext callbackContext, String authTokenType) {
+  private void getToken(CallbackContext callbackCtx, String authTokenType) {
     AccountManager accountManager = AccountManager.get(cordova.getActivity());
     Account acc = AccountUtils.getCurrentUser(cordova.getActivity());
     if (acc != null) {
       try {
-        String authToken = accountManager.blockingGetAuthToken(acc, authTokenType, true);
+       Bundle options = new Bundle();
+       accountManager.getAuthToken(acc, authTokenType, options, true, new AccountManagerCallback<Bundle>() {
+          @Override
+          public void run(AccountManagerFuture<Bundle> future) {
+            try {
+              Bundle result = future.getResult();
+
+              if (result.keySet().contains(AccountManager.KEY_AUTHTOKEN))
+              {
+                callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.OK, result.getString(AccountManager.KEY_AUTHTOKEN)));
+              }
+              else {
+                Intent i = (Intent) result.get(AccountManager.KEY_INTENT);
+                callbackContext = callbackCtx;
+                cordova.startActivityForResult(adfs.this, i, LOGIN_REAUTH);
+              }
+            } catch (AuthenticatorException e) {
+              callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
+            } catch (IOException e) {
+              callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
+            } catch (OperationCanceledException e) {
+              callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
+            }
+          }
+        },null);
+
         //callbackContext.success(authToken);
-        callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, authToken));
+
       } catch (Exception e) {
         //callbackContext.error(e.getMessage());
-        callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
+        callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
       }
     } else {
       //callbackContext.error("Es ist aktuell kein Benutzer eingeloggt.");
-      callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, "Es ist aktuell kein Benutzer eingeloggt."));
+      callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, "Es ist aktuell kein Benutzer eingeloggt."));
     }
   }
 
@@ -70,6 +103,17 @@ public class adfs extends CordovaPlugin {
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent data) {
     super.onActivityResult(requestCode, resultCode, data);
+    if (requestCode == LOGIN_REAUTH)
+    {
+      if (resultCode == cordova.getActivity().RESULT_OK && data != null) {
+        callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, data.getExtras().getString("TOKEN_TYPE_ACCESS")));
+      }
+      else {
+        //callbackContext.error(data.getExtras().containsKey("error") ? data.getStringExtra("error") : "Ein unbekannter Fehler ist aufgetreten.");
+        callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, data.getExtras().containsKey("error") ? data.getStringExtra("error") : "Ein unbekannter Fehler ist aufgetreten."));
+      }
+    }
+    else
     if (requestCode == LOGIN_RES) {
       if (resultCode == cordova.getActivity().RESULT_OK && data != null) {
         JSONObject result = new JSONObject();

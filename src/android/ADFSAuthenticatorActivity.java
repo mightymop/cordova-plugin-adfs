@@ -2,6 +2,7 @@ package de.mopsdom.adfs;
 
 import static android.accounts.AccountManager.KEY_ACCOUNT_NAME;
 import static de.mopsdom.adfs.request.RequestManager.KEY_IS_NEW_ACCOUNT;
+import static de.mopsdom.adfs.request.RequestManager.REFRESH_TOKEN_EXP;
 import static de.mopsdom.adfs.request.RequestManager.TOKEN_TYPE_ACCESS;
 import static de.mopsdom.adfs.request.RequestManager.TOKEN_TYPE_ID;
 import static de.mopsdom.adfs.request.RequestManager.TOKEN_TYPE_REFRESH;
@@ -194,7 +195,6 @@ public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity {
   private class AuthorizeFlowTask extends AsyncTask<String, Void, Boolean> {
 
     private JSONObject configuration;
-    private Context ctx;
     private String client_id; //from adfs admin
     private String scope; //offline_access email allatclaims profile openid
     private String nonce; //"random-nonce"
@@ -226,7 +226,7 @@ public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity {
         if (strconfig == null) {
           configuration = requestManager.load_config();
           if (configuration != null) {
-            Utils.setSharedPref(ctx, "configuration", configuration.toString());
+            Utils.setSharedPref(context, "configuration", configuration.toString());
           } else {
             throw new Exception("Laden der Konfiguration nicht möglich!");
           }
@@ -341,6 +341,41 @@ public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity {
     }
   }
 
+
+  private class LoadKeysTask extends AsyncTask<String, Void, Boolean> {
+
+    private Context context;
+    private JSONObject keys;
+
+    private Account acc;
+
+    public LoadKeysTask(Context c, Account a){
+      context=c;
+      acc=a;
+    }
+
+    @Override
+    protected Boolean doInBackground(String... args) {
+
+      try {
+         keys = requestManager.loadKeys();
+         return true;
+      }
+      catch (Exception e)
+      {
+        Log.e(TAG, e.getMessage());
+        keys=null;
+        return false;
+      }
+    }
+
+    @Override
+    protected void onPostExecute(Boolean wasSuccess) {
+      accountManager.setUserData(acc,RequestManager.PUBLIC_TOKEN_KEYS,keys.toString());
+    }
+  }
+
+
   private abstract class BaseFlowTask extends AsyncTask<String, Void, Boolean> {
     @Override
     protected void onPostExecute(Boolean wasSuccess) {
@@ -413,6 +448,19 @@ public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity {
       if (response.has("refresh_token")) {
         accountManager.setAuthToken(account, TOKEN_TYPE_REFRESH, response.getString("refresh_token"));
       }
+      if (response.has("refresh_token_expires_in")) {
+        long exp = response.getLong("refresh_token_expires_in");
+        long time = System.currentTimeMillis()+exp;
+        accountManager.setUserData(account, REFRESH_TOKEN_EXP, String.valueOf(time));
+      }
+
+      String keys = accountManager.getUserData(account, RequestManager.PUBLIC_TOKEN_KEYS);
+      if (keys==null||keys.trim().length()==0)
+      {
+        LoadKeysTask task = new LoadKeysTask(this, account);
+        task.execute();
+      }
+
       Intent i = new Intent();
       i.putExtra(TOKEN_TYPE_ID,response.getString("id_token"));
       i.putExtra(TOKEN_TYPE_ACCESS,response.getString("access_token"));

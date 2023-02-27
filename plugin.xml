@@ -16,6 +16,10 @@
   <platform name="android">
 	<framework src="com.squareup.okhttp3:okhttp:4.10.0" />
 	<framework src="androidx.browser:browser:1.4.0" />
+	<framework src="io.jsonwebtoken:jjwt-api:0.11.2" />
+	<framework src="io.jsonwebtoken:jjwt-impl:0.11.2" />
+	<framework src="io.jsonwebtoken:jjwt-gson:0.11.5" />
+	
 	<config-file parent="/manifest/application" target="AndroidManifest.xml">
 		<service android:name="de.mopsdom.adfs.AuthenticatorService" android:exported="true">
             <intent-filter>
@@ -81,6 +85,7 @@
 	<resource-file src="src/android/adfs_config.xml" target="res/values/adfs_config.xml" />
 	
 	<resource-file src="src/android/adfsthemes.xml" target="res/values/adfsthemes.xml" />
+	<resource-file src="src/android/baseline_lock_icon_logout_24.xml" target="res/drawable/baseline_lock_icon_logout_24.xml" />
 
   </platform>
 

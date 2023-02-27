@@ -18,6 +18,11 @@ public class RequestManager {
   public static final String TOKEN_TYPE_ID = "TOKEN_TYPE_ID";
   public static final String TOKEN_TYPE_ACCESS = "TOKEN_TYPE_ACCESS";
   public static final String TOKEN_TYPE_REFRESH = "TOKEN_TYPE_REFRESH";
+
+  public static final String REFRESH_TOKEN_EXP = "refresh_token_expires_in";
+
+  public static final String PUBLIC_TOKEN_KEYS = "AUTH_KEYS";
+
   public final static String ACCOUNT_STATE_KEY = "STATUS";
   public final static String REDIRECT_URI = "adfs://adfs-redirect";
   private HTTPUtil http;
@@ -48,6 +53,51 @@ public class RequestManager {
     Uri config_uri = Uri.parse(baseurl + "/.well-known/openid-configuration");
 
     return this.http.retrieveDataJson(config_uri.toString(), "get");
+  }
+
+  public JSONObject loadKeys() throws HttpException {
+
+    if (configuration==null)
+    {
+      configuration = load_config();
+      Utils.setSharedPref(context,"configuration",configuration.toString());
+    }
+
+    String url;
+    try {
+       url = configuration.getString("jwks_uri");
+    }
+    catch (Exception e)
+    {
+      Log.e("cordova-plugin-adfs",e.getMessage());
+      return null;
+    }
+
+    return this.http.retrieveDataJson(url, "get");
+  }
+
+  public String getAccesTokenTrustIssuer() {
+    if (configuration==null)
+    {
+      try {
+        configuration = load_config();
+        Utils.setSharedPref(context, "configuration", configuration.toString());
+      }
+      catch (Exception e)
+      {
+        Log.w("cordova-plugin-adfs",e.getMessage());
+        return Utils.getADFSBaseUrl(context)+"/services/trust";
+      }
+    }
+
+    try {
+      return configuration.getString("access_token_issuer");
+    }
+    catch (Exception e)
+    {
+      Log.w("cordova-plugin-adfs",e.getMessage());
+      return Utils.getADFSBaseUrl(context)+"/services/trust";
+    }
   }
 
   public JSONObject access_token(String code,

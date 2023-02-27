@@ -139,4 +139,19 @@ public class Utils {
     return payload;
   }
 
+  public static JSONObject getHeader(String token) {
+
+    String[] parts = token.split("\\.");
+    String decodedString = decodeBase64(parts[0]);
+
+    JSONObject header = null;
+    try {
+      header = new JSONObject(decodedString);
+    } catch (JSONException e) {
+      return null;
+    }
+
+    return header;
+  }
+
 }

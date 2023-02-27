@@ -4,6 +4,7 @@ import static android.accounts.AccountManager.KEY_ACCOUNT_NAME;
 import static android.accounts.AccountManager.KEY_ACCOUNT_TYPE;
 import static android.accounts.AccountManager.KEY_AUTHTOKEN;
 import static de.mopsdom.adfs.request.RequestManager.KEY_IS_NEW_ACCOUNT;
+import static de.mopsdom.adfs.request.RequestManager.REFRESH_TOKEN_EXP;
 import static de.mopsdom.adfs.request.RequestManager.TOKEN_TYPE_ACCESS;
 import static de.mopsdom.adfs.request.RequestManager.TOKEN_TYPE_ID;
 import static de.mopsdom.adfs.request.RequestManager.TOKEN_TYPE_REFRESH;
@@ -32,12 +33,31 @@ import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import org.json.JSONArray;
 import org.json.JSONObject;
+
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyFactory;
+import java.security.PublicKey;
+import java.security.spec.RSAPublicKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
+import java.util.Date;
 
 import de.mopsdom.adfs.http.HttpException;
 import de.mopsdom.adfs.request.RequestManager;
 import de.mopsdom.adfs.utils.AccountUtils;
 import de.mopsdom.adfs.utils.Utils;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.JwtParserBuilder;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.gson.io.GsonDeserializer;
 
 public class ADFSAuthenticator extends AbstractAccountAuthenticator {
 
@@ -156,6 +176,11 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
           if (jresultJson.has("refresh_token")) {
             accountManager.setAuthToken(account, TOKEN_TYPE_REFRESH, jresultJson.getString("refresh_token"));
           }
+          if (jresultJson.has("refresh_token_expires_in")) {
+            long exp = jresultJson.getLong("refresh_token_expires_in");
+            long time = System.currentTimeMillis()+exp;
+            accountManager.setUserData(account, REFRESH_TOKEN_EXP, String.valueOf(time));
+          }
         } catch (HttpException e) {
           // If the refresh token has expired, we need to launch an intent for the user
           // to get us a new set of tokens by authorising us again.
@@ -179,6 +204,43 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
         token = accountManager.peekAuthToken(account, authTokenType);
       }
     }
+    else {
+      //validating token
+
+      if (!authTokenType.equalsIgnoreCase(TOKEN_TYPE_REFRESH)) {
+        if (!validateToken(account, token,TOKEN_TYPE_ACCESS.equalsIgnoreCase(authTokenType))) {
+          String strexp=accountManager.getUserData(account,REFRESH_TOKEN_EXP);
+          if (strexp==null||strexp.trim().length()==0)
+          {
+            strexp = "0";
+          }
+          long exp = Long.parseLong(strexp);
+          if (exp*1000<System.currentTimeMillis())
+          {
+            accountManager.invalidateAuthToken(TOKEN_TYPE_REFRESH, token);
+            accountManager.setAuthToken(account,TOKEN_TYPE_REFRESH, "");
+          }
+          accountManager.invalidateAuthToken(authTokenType, token);
+          accountManager.setAuthToken(account,authTokenType, "");
+          return getAuthToken(response, account, authTokenType, options);
+        }
+      }
+      else
+      {
+        String strexp=accountManager.getUserData(account,REFRESH_TOKEN_EXP);
+        if (strexp==null||strexp.trim().length()==0)
+        {
+          strexp = "0";
+        }
+        long exp = Long.parseLong(strexp);
+        if (exp*1000<System.currentTimeMillis())
+        {
+          accountManager.invalidateAuthToken(TOKEN_TYPE_REFRESH, token);
+          accountManager.setAuthToken(account,TOKEN_TYPE_REFRESH, "");
+          return getAuthToken(response, account, authTokenType, options);
+        }
+      }
+    }
 
     Log.d(TAG, String.format("Returning token '%s' of type '%s'.", token, authTokenType));
 
@@ -189,7 +251,165 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
     result.putString(KEY_AUTHTOKEN, token);
 
     return result;
+  }
 
+  public void saveKeys(Account acc, JSONObject keys)
+  {
+    accountManager.setUserData(acc,RequestManager.PUBLIC_TOKEN_KEYS,keys.toString());
+  }
+
+  public JSONObject getKeys(Account acc)
+  {
+    try {
+      String res = accountManager.getUserData(acc, RequestManager.PUBLIC_TOKEN_KEYS);
+      if (res!=null&&res.trim().length()>0) {
+        return new JSONObject();
+      }
+      return null;
+    }
+    catch (Exception e)
+    {
+      Log.e("cordova-plugin-adfs",e.getMessage());
+      return null;
+    }
+  }
+
+  public JKey getKey(Account acc, String token) {
+
+    try {
+      JSONObject header = Utils.getHeader(token);
+      if (header!=null) {
+        String x5t = header.getString("x5t");
+        String alg = header.getString("alg");
+        String kid = header.getString("kid");
+
+        JSONObject localKeys = getKeys(acc);
+
+        if (localKeys==null) {
+          localKeys = getPublicKeys();
+          saveKeys(acc,localKeys);
+        }
+
+        JKey key;
+        if ((key=searchKey(localKeys,x5t,alg,kid))!=null)
+        {
+          return key;
+        }
+
+        localKeys = getPublicKeys();
+        saveKeys(acc,localKeys);
+
+        if ((key=searchKey(localKeys,x5t,alg,kid))!=null)
+        {
+          return key;
+        }
+        return null;
+      }
+    }
+    catch (Exception e)
+    {
+      Log.e("cordova-plugin-adfs",e.getMessage());
+    }
+
+    return null;
+  }
+
+  class JKey {
+    public String n;
+    public String e;
+  }
+  private JKey searchKey(JSONObject localKeys, String x5t, String alg, String kid) {
+
+    try {
+      JSONArray keys = localKeys.getJSONArray("keys");
+      for (int n = 0; n < keys.length(); n++) {
+        JSONObject key = keys.getJSONObject(n);
+        boolean bx5t = key.has("x5t") && key.getString("x5t").equalsIgnoreCase(x5t);
+        boolean balg = key.has("alg") && key.getString("alg").equalsIgnoreCase(alg);
+        boolean bkid = key.has("kid") && key.getString("kid").equalsIgnoreCase(kid);
+
+        if (bx5t && balg && bkid) {
+          JKey result = new JKey();
+          result.n=key.getString("n");
+          result.e=key.getString("e");
+          return result;
+        }
+      }
+    }
+    catch (Exception e)
+    {
+      Log.e("cordova-plugin-adfs",e.getMessage());
+    }
+    return null;
+  }
+
+
+  public JSONObject getPublicKeys()
+  {
+    try {
+      return  this.requestManager.loadKeys();
+    }
+    catch (Exception e)
+    {
+      Log.e("cordova-plugin-adfs",e.getMessage());
+      return null;
+    }
+  }
+
+  public boolean validateToken(Account acc, String token, boolean accessToken) {
+    try {
+      // Parse the token without verifying the signature
+      Gson gson = new GsonBuilder().disableHtmlEscaping().create(); //implement me
+
+      JKey jsonKey = getKey(acc,token);
+      JwtParserBuilder parserBuilder = Jwts.parserBuilder();
+      parserBuilder.deserializeJsonWith(new GsonDeserializer(gson));
+      parserBuilder.setAllowedClockSkewSeconds(60)
+      .requireIssuer(accessToken? requestManager.getAccesTokenTrustIssuer() : Utils.getADFSBaseUrl(context));
+
+      if (jsonKey!=null)
+      {
+        BigInteger modulus = null;
+        BigInteger exponent = null;
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+          modulus =  new BigInteger(1, Base64.getUrlDecoder().decode(jsonKey.n));
+          exponent = new BigInteger(1, Base64.getUrlDecoder().decode(jsonKey.e));;
+        }
+        else
+        {
+          modulus =  new BigInteger(1, android.util.Base64.decode(jsonKey.n, android.util.Base64.DEFAULT));
+          exponent = new BigInteger(1, android.util.Base64.decode(jsonKey.e, android.util.Base64.DEFAULT));
+        }
+
+        PublicKey publicKey = KeyFactory.getInstance("RSA").generatePublic(new RSAPublicKeySpec(modulus, exponent));
+        parserBuilder.setSigningKey(publicKey);
+      }
+
+      Jws<Claims> jws = parserBuilder
+              .build()
+              .parseClaimsJws(token);
+
+      // Get the token claims
+      Claims claims = jws.getBody();
+
+      // Check the "exp" claim to ensure the token has not expired
+      Date expiration = claims.getExpiration();
+      if (expiration != null && expiration.before(new Date())) {
+        return false;
+      }
+
+      // Check the "nbf" claim to ensure the token is not used before it's valid
+      Date notBefore = claims.getNotBefore();
+      if (notBefore != null && notBefore.after(new Date())) {
+        return false;
+      }
+
+      return true;
+    } catch (Exception e) {
+      // Token is not valid
+      return false;
+    }
   }
 
   /**
