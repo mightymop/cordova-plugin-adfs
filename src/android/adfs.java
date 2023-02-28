@@ -7,10 +7,12 @@ import android.accounts.AccountManagerFuture;
 import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
@@ -44,13 +46,25 @@ public class adfs extends CordovaPlugin {
     super.initialize(cordova, webView);
     authenticator = new ADFSAuthenticator(cordova.getContext());
   }
-
   private void getToken(CallbackContext callbackCtx, String authTokenType) {
+    getToken(callbackCtx,AccountUtils.getCurrentUser(cordova.getActivity()),authTokenType);
+  }
+  private void getToken(CallbackContext callbackCtx, Account acc, String authTokenType) {
     AccountManager accountManager = AccountManager.get(cordova.getActivity());
-    Account acc = AccountUtils.getCurrentUser(cordova.getActivity());
     if (acc != null) {
       try {
        Bundle options = new Bundle();
+ /*
+       String token = accountManager.blockingGetAuthToken(acc,authTokenType,true);
+       if (token==null)
+       {
+         login(callbackContext);
+       }
+       else {
+         callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.OK, token));
+       }*/
+
+
        accountManager.getAuthToken(acc, authTokenType, options, true, new AccountManagerCallback<Bundle>() {
           @Override
           public void run(AccountManagerFuture<Bundle> future) {
@@ -79,6 +93,7 @@ public class adfs extends CordovaPlugin {
         //callbackContext.success(authToken);
 
       } catch (Exception e) {
+        Log.e(TAG,e.getMessage(),e);
         //callbackContext.error(e.getMessage());
         callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
       }
@@ -129,7 +144,7 @@ public class adfs extends CordovaPlugin {
         }
       } else {
         //callbackContext.error(data.getExtras().containsKey("error") ? data.getStringExtra("error") : "Ein unbekannter Fehler ist aufgetreten.");
-        callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, data.getExtras().containsKey("error") ? data.getStringExtra("error") : "Ein unbekannter Fehler ist aufgetreten."));
+        callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, data!=null&&data.getExtras()!=null && data.getExtras().containsKey("error") ? data.getStringExtra("error") : "Ein unbekannter Fehler ist aufgetreten."));
       }
     }
   }
@@ -138,7 +153,8 @@ public class adfs extends CordovaPlugin {
     Account acc = AccountUtils.getCurrentUser(cordova.getActivity());
     if (acc != null) {
       //callbackContext.success(acc.name);
-      callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, acc.name));
+      getIDToken(callbackContext);
+      //callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, acc.name));
     } else {
       callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, "Kein Benutzer angemeldet"));
      // callbackContext.error("Kein Benutzer angemeldet");
@@ -151,6 +167,7 @@ public class adfs extends CordovaPlugin {
     cordova.startActivityForResult(this, i, LOGIN_RES);
   }
 
+  @RequiresApi(api = Build.VERSION_CODES.O)
   private void logout(CallbackContext callbackContext) {
     Account acc = AccountUtils.getCurrentUser(cordova.getActivity());
     if (acc != null) {
@@ -172,8 +189,10 @@ public class adfs extends CordovaPlugin {
 
         JSONObject result = new JSONObject();
         try {
-          request = data.getJSONObject(0);
-          result.put("request", request);
+          if (data.length()>0) {
+            request = data.getJSONObject(0);
+            result.put("request", request);
+          }
         } catch (Exception e) {
           Log.e(TAG, e.getMessage());
         }

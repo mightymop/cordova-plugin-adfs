@@ -14,24 +14,22 @@ import android.accounts.Account;
 import android.accounts.AccountAuthenticatorResponse;
 import android.accounts.AccountManager;
 import android.accounts.NetworkErrorException;
+import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.provider.Browser;
 import android.text.TextUtils;
 import android.util.Log;
-import android.webkit.CookieManager;
-import android.webkit.CookieSyncManager;
-import android.webkit.ValueCallback;
 
-import androidx.browser.customtabs.CustomTabsIntent;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
+import androidx.annotation.RequiresApi;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -40,11 +38,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.RSAPublicKeySpec;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.Date;
 
@@ -54,7 +50,7 @@ import de.mopsdom.adfs.utils.AccountUtils;
 import de.mopsdom.adfs.utils.Utils;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
-import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.JwtParserBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.gson.io.GsonDeserializer;
@@ -161,7 +157,7 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
         Log.d(TAG, "Got refresh token, getting new tokens.");
 
         try {
-          String resultJson = requestManager.refresh_token(AccountUtils.getAccountData(context, account, "clientid"),
+          String resultJson = requestManager.refresh_token(Utils.getVal(context, "client_id"),
             refreshToken,
             "refresh_token");
 
@@ -178,7 +174,7 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
           }
           if (jresultJson.has("refresh_token_expires_in")) {
             long exp = jresultJson.getLong("refresh_token_expires_in");
-            long time = System.currentTimeMillis()+exp;
+            long time = System.currentTimeMillis()+(exp*1000)-60000;
             accountManager.setUserData(account, REFRESH_TOKEN_EXP, String.valueOf(time));
           }
         } catch (HttpException e) {
@@ -197,7 +193,7 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
           result.putParcelable(AccountManager.KEY_INTENT, intent);
           return result;
         } catch (Exception e) {
-          //FIXME: we need to see how to handle this here because we can't do a start activity for result
+          Log.e(TAG,e.getMessage(),e);
         }
 
         // Now, let's return the token that was requested
@@ -206,34 +202,57 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
     }
     else {
       //validating token
+      String strexp = accountManager.getUserData(account, REFRESH_TOKEN_EXP);
+      if (strexp == null || strexp.trim().length() == 0) {
+        strexp = "0";
+      }
+      long exp = Long.parseLong(strexp);
 
       if (!authTokenType.equalsIgnoreCase(TOKEN_TYPE_REFRESH)) {
-        if (!validateToken(account, token,TOKEN_TYPE_ACCESS.equalsIgnoreCase(authTokenType))) {
-          String strexp=accountManager.getUserData(account,REFRESH_TOKEN_EXP);
-          if (strexp==null||strexp.trim().length()==0)
-          {
-            strexp = "0";
+
+       if (isNetworkAvailable(context)) {
+
+         boolean isofflinetoken=isOfflineToken(token);
+
+         boolean isvalid = validateToken(account, token, TOKEN_TYPE_ACCESS.equalsIgnoreCase(authTokenType));
+
+          if (isofflinetoken||!isvalid) {
+
+            if (exp < System.currentTimeMillis()) {
+
+              accountManager.invalidateAuthToken(TOKEN_TYPE_REFRESH, token);
+              accountManager.setAuthToken(account, TOKEN_TYPE_REFRESH, "");
+            }
+            accountManager.invalidateAuthToken(authTokenType, token);
+            accountManager.setAuthToken(account, authTokenType, "");
+            return getAuthToken(response, account, authTokenType, options);
           }
-          long exp = Long.parseLong(strexp);
-          if (exp*1000<System.currentTimeMillis())
-          {
+        }
+        else {
+          if (exp < System.currentTimeMillis()) { //token abgelaufen
             accountManager.invalidateAuthToken(TOKEN_TYPE_REFRESH, token);
-            accountManager.setAuthToken(account,TOKEN_TYPE_REFRESH, "");
+            accountManager.setAuthToken(account, TOKEN_TYPE_REFRESH, "");
+            accountManager.invalidateAuthToken(authTokenType, token);
+            accountManager.setAuthToken(account, authTokenType, "");
+            return getAuthToken(response, account, authTokenType, options);
           }
-          accountManager.invalidateAuthToken(authTokenType, token);
-          accountManager.setAuthToken(account,authTokenType, "");
-          return getAuthToken(response, account, authTokenType, options);
+          else
+          { //offline aber refresh_token noch gültig
+            String offlinetoken = getOfflineToken(token,exp);
+            accountManager.invalidateAuthToken(authTokenType, token);
+            accountManager.setAuthToken(account, authTokenType, offlinetoken);
+            Bundle result = new Bundle();
+
+            result.putString(KEY_ACCOUNT_NAME, account.name);
+            result.putString(KEY_ACCOUNT_TYPE, account.type);
+            result.putString(KEY_AUTHTOKEN, offlinetoken);
+            return result;
+          }
         }
       }
       else
       {
-        String strexp=accountManager.getUserData(account,REFRESH_TOKEN_EXP);
-        if (strexp==null||strexp.trim().length()==0)
-        {
-          strexp = "0";
-        }
-        long exp = Long.parseLong(strexp);
-        if (exp*1000<System.currentTimeMillis())
+        if (exp < System.currentTimeMillis())
         {
           accountManager.invalidateAuthToken(TOKEN_TYPE_REFRESH, token);
           accountManager.setAuthToken(account,TOKEN_TYPE_REFRESH, "");
@@ -258,12 +277,85 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
     accountManager.setUserData(acc,RequestManager.PUBLIC_TOKEN_KEYS,keys.toString());
   }
 
+  private boolean isOfflineToken(String token)
+  {
+    try {
+      String strheaderb64 = token.split("\\.")[1];
+      String strheader = null;
+      if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+        strheader = new String(Base64.getUrlDecoder().decode(strheaderb64));
+      } else {
+        strheader = new String(android.util.Base64.decode(strheader, android.util.Base64.DEFAULT));
+      }
+      JSONObject header = new JSONObject(strheader);
+      return header.has("alg") && header.getString("alg").equalsIgnoreCase("none");
+    }
+    catch (Exception e)
+    {
+      Log.e(TAG,e.getMessage());
+      return false;
+    }
+  }
+
+  private long getExpirationFromToken(String token) {
+
+    String offlinetoken = token.substring(token.lastIndexOf(".") + 1);
+    Gson gson = new GsonBuilder().disableHtmlEscaping().create(); //implement me
+    JwtParserBuilder parserBuilder = Jwts.parserBuilder();
+    parserBuilder.deserializeJsonWith(new GsonDeserializer(gson));
+    parserBuilder.setAllowedClockSkewSeconds(60);
+
+    Jws<Claims> jws = parserBuilder
+      .build()
+      .parseClaimsJws(offlinetoken);
+
+    // Get the token claims
+    Claims claims = jws.getBody();
+
+    Date exp = claims.getExpiration();
+
+    return exp.getTime();
+  }
+
+  private String getOfflineToken(String token, long expiration)
+  {
+    if (token.split("\\.").length<3||(token.split("\\.").length==3&&token.split("\\.")[2].isEmpty()))
+      return token;
+
+    try {
+      String strpayloadb64 = token.split("\\.")[1];
+      String strpayload = null;
+      if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+        strpayload = new String(Base64.getUrlDecoder().decode(strpayloadb64));
+      }
+      else
+      {
+        strpayload = new String(android.util.Base64.decode(strpayload, android.util.Base64.DEFAULT));
+      }
+      JSONObject payload = new JSONObject(strpayload);
+
+      payload.put("exp",expiration);
+
+      JwtBuilder builder = Jwts.builder().setHeaderParam("typ","JWT")
+        .setPayload(payload.toString());
+
+      String jwt = builder.compact();
+
+      return jwt;
+    }
+    catch (Exception e)
+    {
+      Log.e(TAG,e.getMessage());
+      return token;
+    }
+  }
+
   public JSONObject getKeys(Account acc)
   {
     try {
       String res = accountManager.getUserData(acc, RequestManager.PUBLIC_TOKEN_KEYS);
       if (res!=null&&res.trim().length()>0) {
-        return new JSONObject();
+        return new JSONObject(res);
       }
       return null;
     }
@@ -288,6 +380,11 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
         if (localKeys==null) {
           localKeys = getPublicKeys();
           saveKeys(acc,localKeys);
+        }
+
+        if (localKeys==null||!localKeys.has("keys"))
+        {
+          return null;
         }
 
         JKey key;
@@ -343,6 +440,16 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
     return null;
   }
 
+  @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+  public static boolean isNetworkAvailable(Context context) {
+    ConnectivityManager connectivityManager =
+      (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+    NetworkInfo networkInfo = null;
+    if (connectivityManager != null) {
+      networkInfo = connectivityManager.getActiveNetworkInfo();
+    }
+    return networkInfo != null && networkInfo.isConnected();
+  }
 
   public JSONObject getPublicKeys()
   {
@@ -366,7 +473,7 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
       parserBuilder.deserializeJsonWith(new GsonDeserializer(gson));
       parserBuilder.setAllowedClockSkewSeconds(60)
       .requireIssuer(accessToken? requestManager.getAccesTokenTrustIssuer() : Utils.getADFSBaseUrl(context));
-
+      Jws<Claims> jws ;
       if (jsonKey!=null)
       {
         BigInteger modulus = null;
@@ -384,11 +491,16 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
 
         PublicKey publicKey = KeyFactory.getInstance("RSA").generatePublic(new RSAPublicKeySpec(modulus, exponent));
         parserBuilder.setSigningKey(publicKey);
+        jws = (Jws<Claims>) parserBuilder
+          .build()
+          .parse(token);
       }
-
-      Jws<Claims> jws = parserBuilder
-              .build()
-              .parseClaimsJws(token);
+      else {
+        token = token.substring(0,token.lastIndexOf(".")+1);
+        jws = parserBuilder
+          .build()
+          .parseClaimsJws(token);
+      }
 
       // Get the token claims
       Claims claims = jws.getBody();
@@ -430,13 +542,12 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
     return intent;
   }
 
+  @RequiresApi(api = Build.VERSION_CODES.O)
   public static void logout(Context context) {
     Account acc = AccountUtils.getCurrentUser(context);
     if (acc != null) {
       AccountUtils.setAccountData(context, acc, RequestManager.ACCOUNT_STATE_KEY, "0");
     }
-
-
 
     String strconfig = Utils.getSharedPref(context, "configuration");
     if (strconfig != null) {
@@ -445,56 +556,70 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
       {
         JSONObject configjson = new JSONObject(strconfig);
         Uri uri = Uri.parse(configjson.getString("end_session_endpoint"));
-
-        // CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
-        // CustomTabsIntent customTabsIntent = builder.build();
-        // customTabsIntent.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-
-        // customTabsIntent.intent.setData(uri);
-       // customTabsIntent.launchUrl(context, uri);
-
+        int iconIdentifier = Utils.getLogoutIconIdentifier(context);
         Intent i = new Intent(Intent.ACTION_VIEW,uri);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        context.startActivity(i);
+        int NOTIFICATION_ID = 11010;
+        String CHANNEL_ID = "Abmeldung";
+        String CHANNEL_NAME = "Abmeldung";
+        String CHANNEL_DESCRIPTION = "Abmeldung SSO";
 
         PendingIntent pi=null;
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
           pi = PendingIntent.getActivity(context,0,
-                  i
-                  //customTabsIntent.intent
-                  ,PendingIntent.FLAG_UPDATE_CURRENT| PendingIntent.FLAG_IMMUTABLE);
+            i
+            //customTabsIntent.intent
+            ,PendingIntent.FLAG_UPDATE_CURRENT| PendingIntent.FLAG_IMMUTABLE);
         }else {
           pi = PendingIntent.getActivity(context,0,
-                  i
-                  // customTabsIntent.intent
-                  ,PendingIntent.FLAG_UPDATE_CURRENT);
+            i
+            // customTabsIntent.intent
+            ,PendingIntent.FLAG_UPDATE_CURRENT);
         }
 
-        String CHANNEL_WHATEVER = "SSO ABMELDUNG";
-        NotificationCompat.Builder nbuilder = new NotificationCompat.Builder(context,CHANNEL_WHATEVER)
-                .setContentTitle("Abmeldung")
-                .setContentText("Klicken Sie, um die Abmeldung durchzuführen!")
-                .setAutoCancel(true)
-                .setSmallIcon(Utils.getLogoutIconIdentifier(context))
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setContentIntent(pi);
+        // Erstellen der NotificationManager-Instanz
+        NotificationManager notificationManager =
+          (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
-        NotificationManager mgr = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                && mgr.getNotificationChannel(CHANNEL_WHATEVER) == null
-        ) {
-          mgr.createNotificationChannel(new
-                  NotificationChannel(
-                          CHANNEL_WHATEVER,
-                          "Abmeldung",
-                          NotificationManager.IMPORTANCE_HIGH
-                  )
+        // Überprüfen, ob das Gerät Android 8.0 oder höher ausführt, da ab Android 8.0 ein Notification-Kanal erforderlich ist
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+          NotificationChannel channel = new NotificationChannel(
+            CHANNEL_ID,
+            CHANNEL_NAME,
+            NotificationManager.IMPORTANCE_HIGH
           );
+          channel.setDescription(CHANNEL_DESCRIPTION);
+          channel.enableLights(true);
+          channel.setLightColor(Color.RED);
+          notificationManager.createNotificationChannel(channel);
         }
 
-        mgr.notify(1010101, nbuilder.build());
+        // Erstellen der Notification-Instanz mit dem PendingIntent
+        Notification.Builder builder = new Notification.Builder(context, CHANNEL_ID)
+          .setContentTitle("Abmeldung")
+          .setContentText("Hier klicken zum Abmelden")
+          .setSmallIcon(iconIdentifier)
+          .setContentIntent(pi)
+          .setPriority(Notification.PRIORITY_HIGH)
+          .setAutoCancel(true);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+          // Setzen der Farbe des Notification-Icons für Android 5.0 und höher
+          builder.setColor(Color.RED);
+        }
+
+        Notification notification;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+          // Setzen der Benachrichtigungssummary für Android 8.0 und höher
+          builder.setGroupSummary(true);
+          notification = builder.build();
+        } else {
+          notification = builder.getNotification();
+        }
+
+        // Anzeigen der Notification
+        notificationManager.notify(NOTIFICATION_ID, notification);
 
       } catch (Exception e) {
         Log.e("cordova-plugin-adfs", e.getMessage());

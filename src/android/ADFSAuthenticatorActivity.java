@@ -1,6 +1,8 @@
 package de.mopsdom.adfs;
 
 import static android.accounts.AccountManager.KEY_ACCOUNT_NAME;
+import static androidx.browser.customtabs.CustomTabsIntent.EXTRA_ENABLE_INSTANT_APPS;
+import static androidx.browser.customtabs.CustomTabsIntent.EXTRA_SESSION;
 import static de.mopsdom.adfs.request.RequestManager.KEY_IS_NEW_ACCOUNT;
 import static de.mopsdom.adfs.request.RequestManager.REFRESH_TOKEN_EXP;
 import static de.mopsdom.adfs.request.RequestManager.TOKEN_TYPE_ACCESS;
@@ -11,6 +13,7 @@ import static de.mopsdom.adfs.utils.Utils.getDataFromIntent;
 import android.accounts.Account;
 import android.accounts.AccountAuthenticatorActivity;
 import android.accounts.AccountManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -19,7 +22,13 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.browser.customtabs.CustomTabsCallback;
+import androidx.browser.customtabs.CustomTabsClient;
 import androidx.browser.customtabs.CustomTabsIntent;
+import androidx.browser.customtabs.CustomTabsServiceConnection;
+import androidx.browser.customtabs.CustomTabsSession;
+import androidx.core.content.ContextCompat;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -34,8 +43,7 @@ import de.mopsdom.adfs.request.RequestManager;
 import de.mopsdom.adfs.utils.AccountUtils;
 import de.mopsdom.adfs.utils.Utils;
 
-public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity {
-
+public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity   {
 
   private final String TAG = getClass().getSimpleName();
 
@@ -50,6 +58,16 @@ public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity {
   protected String secureState;
 
   private ArrayList<String> errList = new ArrayList<>();
+
+  private CustomTabsSession session;
+
+  private CustomTabsIntent customTabsIntent;
+  private CustomTabsServiceConnection connection;
+
+  private CustomTabsClient customTabsClient;
+  private CustomTabsCallback callback;
+
+
 
   @Override
   public void onNewIntent(Intent intent) {
@@ -329,10 +347,54 @@ public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity {
 
         CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
 
-        CustomTabsIntent customTabsIntent = builder.build();
+        customTabsIntent = builder.build();
         customTabsIntent.intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
         customTabsIntent.intent.addFlags(Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
-        customTabsIntent.launchUrl(context, Uri.parse(url));
+
+        final Uri uri = Uri.parse(url);
+
+        connection = new CustomTabsServiceConnection() {
+          @Override
+          public void onCustomTabsServiceConnected(ComponentName componentName, CustomTabsClient cTabsClient) {
+            customTabsClient = cTabsClient;
+
+            callback = new CustomTabsCallback() {
+              @Override
+              public void onNavigationEvent(int navigationEvent, Bundle extras) {
+                Log.e(TAG,"=================onNavigationEvent==================");
+                if (navigationEvent == TAB_HIDDEN) {
+                  // The Chrome tab has been closed
+                  Log.e(TAG,"=================onNavigationEvent==================TAB_HIDDEN");
+                } else if (navigationEvent == NAVIGATION_FAILED) {
+                  Log.e(TAG,"=================onNavigationEvent==================NAVIGATION_FAILED");
+                  // The navigation failed
+                  setErrorResult("Navigation failed: " + extras.getString("error_message"));
+                  finish();
+                }
+              }
+            };
+
+            customTabsClient.warmup(0L);
+
+            session = customTabsClient.newSession(callback);
+
+            session.mayLaunchUrl(uri, null, null);
+
+            customTabsIntent.intent.setData(uri);
+            customTabsIntent.intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
+
+            customTabsIntent.launchUrl(context, uri);
+
+          }
+
+          @Override
+          public void onServiceDisconnected(ComponentName name) {
+            customTabsClient = null;
+          }
+        };
+
+        CustomTabsClient.bindCustomTabsService(context, "com.android.chrome", connection);
+      //  customTabsIntent.launchUrl(context, Uri.parse(url));
       } catch (Exception e) {
         String err = e.getMessage();
         errList.add(err);
@@ -341,6 +403,15 @@ public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity {
     }
   }
 
+
+  @Override
+  public void onDestroy()
+  {
+    super.onDestroy();
+    if (connection != null) {
+      unbindService(connection);
+    }
+  }
 
   private class LoadKeysTask extends AsyncTask<String, Void, Boolean> {
 
@@ -450,7 +521,7 @@ public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity {
       }
       if (response.has("refresh_token_expires_in")) {
         long exp = response.getLong("refresh_token_expires_in");
-        long time = System.currentTimeMillis()+exp;
+        long time = System.currentTimeMillis()+(exp*1000)-60000; //-60000 as buffer
         accountManager.setUserData(account, REFRESH_TOKEN_EXP, String.valueOf(time));
       }
 
