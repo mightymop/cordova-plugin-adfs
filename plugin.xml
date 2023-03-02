@@ -29,9 +29,13 @@
                 android:name="android.accounts.AccountAuthenticator"
                 android:resource="@xml/authenticator_user" />
         </service>
-		<receiver android:enabled="true" android:exported="true" android:name="de.mopsdom.adfs.RemoveReceiver" android:priority="999">
+		<receiver android:enabled="true" android:exported="true" android:name="de.mopsdom.adfs.Receiver" android:priority="999">
           <intent-filter>
             <action android:name="android.accounts.action.ACCOUNT_REMOVED" />
+			<action android:name="android.intent.action.BOOT_COMPLETED" />
+			<action android:name="android.intent.action.PACKAGE_REPLACED" />
+            <action android:name="android.intent.action.PACKAGE_ADDED" />
+            <action android:name="android.intent.action.PACKAGE_DATA_CLEARED" />
           </intent-filter>
         </receiver>
 		<activity android:name="de.mopsdom.adfs.ADFSAuthenticatorActivity"
@@ -64,6 +68,8 @@
 		<uses-permission android:name="android.permission.INTERNET" />
 		<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 		<uses-permission android:name="android.permission.USE_CREDENTIALS" />
+		<uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+		<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 		<queries>
 			<intent>
 				<action android:name="android.support.customtabs.action.CustomTabsService" />
@@ -79,7 +85,7 @@
 	<source-file src="src/android/AuthenticatorService.java" target-dir="src/de/mopsdom/adfs"/>
 	<source-file src="src/android/ADFSAuthenticatorActivity.java" target-dir="src/de/mopsdom/adfs"/>
 	<source-file src="src/android/ADFSAuthenticator.java" target-dir="src/de/mopsdom/adfs"/>
-	<source-file src="src/android/RemoveReceiver.java" target-dir="src/de/mopsdom/adfs"/>
+	<source-file src="src/android/Receiver.java" target-dir="src/de/mopsdom/adfs"/>
 	
 	<source-file src="src/android/HttpException.java" target-dir="src/de/mopsdom/adfs/http"/>
 	<source-file src="src/android/HTTPUtil.java" target-dir="src/de/mopsdom/adfs/http"/>

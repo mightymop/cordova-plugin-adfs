@@ -30,6 +30,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import androidx.annotation.RequiresApi;
+import androidx.core.app.NotificationCompat;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -596,7 +597,7 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
         }
 
         // Erstellen der Notification-Instanz mit dem PendingIntent
-        Notification.Builder builder = new Notification.Builder(context, CHANNEL_ID)
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
           .setContentTitle("Abmeldung")
           .setContentText("Hier klicken zum Abmelden")
           .setSmallIcon(iconIdentifier)
