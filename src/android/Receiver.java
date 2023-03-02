@@ -26,18 +26,7 @@ public class Receiver extends BroadcastReceiver {
       String ownKey = AccountUtils.getAccountTypeKey(context);
       if (accountType.equalsIgnoreCase(ownKey))
       {
-        Thread t = new Thread(new Runnable() {
-          @Override
-          public void run() {
-            ADFSAuthenticator.logout(context);
-          }
-        });
-        t.start();
-        try {
-          t.join();
-        } catch (InterruptedException e) {
-          throw new RuntimeException(e);
-        }
+        ADFSAuthenticator.logout(context);
       }
     }
     else if (action.equalsIgnoreCase(Intent.ACTION_BOOT_COMPLETED)||
