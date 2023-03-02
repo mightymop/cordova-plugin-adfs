@@ -84,7 +84,7 @@ public class Utils {
   {
     String resourceType = "drawable";
     String packageName = context.getPackageName();
-    return context.getResources().getIdentifier("baseline_lock_24", resourceType, packageName);
+    return context.getResources().getIdentifier("baseline_lock_icon_logout_24", resourceType, packageName);
   }
 
   public static String getUserIDClaim(Context context) {
