@@ -24,7 +24,7 @@ public class RequestManager {
   public static final String PUBLIC_TOKEN_KEYS = "AUTH_KEYS";
 
   public final static String ACCOUNT_STATE_KEY = "STATUS";
-  public final static String REDIRECT_URI = "adfs://adfs-redirect";
+  public final static String REDIRECT_URI = "adfs://*.adfs/redirect";
   private HTTPUtil http;
 
   private Context context;
