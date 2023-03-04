@@ -1,11 +1,17 @@
 package de.mopsdom.adfs.request;
 
 import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 import de.mopsdom.adfs.http.HTTPUtil;
 import de.mopsdom.adfs.http.HttpException;
@@ -74,6 +80,34 @@ public class RequestManager {
     }
 
     return this.http.retrieveDataJson(url, "get");
+  }
+
+  public boolean isNetworkAvailable() {
+    ConnectivityManager connectivityManager =
+      (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+    NetworkInfo networkInfo = null;
+    if (connectivityManager != null) {
+      networkInfo = connectivityManager.getActiveNetworkInfo();
+    }
+    return networkInfo != null && networkInfo.isConnected();
+  }
+
+  public boolean isServerReachable() {
+    try {
+      if (configuration==null)
+      {
+        configuration = load_config();
+        Utils.setSharedPref(context,"configuration",configuration.toString());
+      }
+
+      URL url = new URL(configuration.getString("token_endpoint"));
+      HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+      connection.setRequestMethod("HEAD");
+      int responseCode = connection.getResponseCode();
+      return responseCode == HttpURLConnection.HTTP_OK;
+    } catch (Exception e) {
+      return false;
+    }
   }
 
   public String getAccesTokenTrustIssuer() {

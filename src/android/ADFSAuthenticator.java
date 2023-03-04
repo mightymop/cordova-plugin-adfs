@@ -38,7 +38,10 @@ import com.google.gson.GsonBuilder;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.math.BigInteger;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.RSAPublicKeySpec;
@@ -211,7 +214,7 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
 
       if (!authTokenType.equalsIgnoreCase(TOKEN_TYPE_REFRESH)) {
 
-       if (isNetworkAvailable(context)) {
+       if (requestManager.isNetworkAvailable()&&requestManager.isServerReachable()) {
 
          boolean isofflinetoken=isOfflineToken(token);
 
@@ -272,6 +275,8 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
 
     return result;
   }
+
+
 
   public void saveKeys(Account acc, JSONObject keys)
   {
@@ -442,15 +447,6 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
   }
 
   @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-  public static boolean isNetworkAvailable(Context context) {
-    ConnectivityManager connectivityManager =
-      (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-    NetworkInfo networkInfo = null;
-    if (connectivityManager != null) {
-      networkInfo = connectivityManager.getActiveNetworkInfo();
-    }
-    return networkInfo != null && networkInfo.isConnected();
-  }
 
   public JSONObject getPublicKeys()
   {
