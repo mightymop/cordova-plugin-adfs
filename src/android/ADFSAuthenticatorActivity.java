@@ -241,6 +241,15 @@ public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity   {
 
       try {
         String strconfig = Utils.getSharedPref(context, "configuration");
+		
+		if (strconfig!=null)
+        {
+          JSONObject json = new JSONObject(strconfig);
+          if (json.has("error"))
+          {
+            strconfig=null;
+          }
+        }
 
         if (strconfig == null) {
           configuration = requestManager.load_config();
