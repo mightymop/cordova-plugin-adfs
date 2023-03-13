@@ -25,6 +25,9 @@ with json config params:
 		}
 ```
 
+The proxy is for reading the openid config and other tasks which needs to connect to adfs, except the 
+custom chrome tab for login (which uses the system proxy)!!!!
+
 
 ### 4. Usage:
 
