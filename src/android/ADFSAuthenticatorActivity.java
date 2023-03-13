@@ -73,6 +73,7 @@ public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity   {
   public void onNewIntent(Intent intent) {
     super.onNewIntent(intent);
 
+	Log.debug(TAG,"onNewIntent");
     if (intent.getAction()==null||!intent.getAction().equalsIgnoreCase(Intent.ACTION_VIEW)) {
       return;
     }
@@ -105,7 +106,7 @@ public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity   {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-
+	Log.debug(TAG,"onCreate");
     Bundle extras = getIntent().getExtras();
 
     // Are we supposed to create a new account or renew the authorisation of an old one?
