@@ -20,7 +20,8 @@ with json config params:
 			"baseurl": "https://dc2019.poldom.local/adfs",
 			"key_userid": "upn",
 			"client_id": "5ecf10b7-617a-4382-a67a-d35e30a66fae",
-			"scope": "openid email profile offline_access allatclaims"
+			"scope": "openid email profile offline_access allatclaims",
+			"proxy": ""
 		}
 ```
 

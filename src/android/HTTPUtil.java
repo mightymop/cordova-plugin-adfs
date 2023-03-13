@@ -1,5 +1,7 @@
 package de.mopsdom.adfs.http;
 
+import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.util.Log;
 
@@ -8,6 +10,8 @@ import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.security.cert.CertificateException;
 import java.util.concurrent.TimeUnit;
 
@@ -17,6 +21,7 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import de.mopsdom.adfs.utils.Utils;
 import okhttp3.Cache;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -29,17 +34,31 @@ public class HTTPUtil {
   private OkHttpClient httpClient;
   private OkCookieJar cookies;
 
-  public HTTPUtil(){
-    this.httpClient = createClient();
+  public HTTPUtil(Context ctx){
+    this.httpClient = createClient(ctx);
   }
 
   public OkHttpClient getClient() {
       return this.httpClient;
   }
-  public OkHttpClient createClient() {
+  public OkHttpClient createClient(Context ctx) {
 
     if (httpClient != null)
       return httpClient;
+
+    String strproxy = Utils.getProxy(ctx);
+
+    Proxy proxy;
+    if (strproxy!=null&&!strproxy.isEmpty()) {
+      if (strproxy.contains(":")) {
+        proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(strproxy.split(":")[0], Integer.parseInt(strproxy.split(":")[1])));
+      } else {
+        proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("proxy", 80));
+      }
+    }
+    else {
+      proxy = Proxy.NO_PROXY;
+    }
 
     OkHttpClient.Builder builder = new OkHttpClient.Builder();
     builder.hostnameVerifier(new HostnameVerifier() {
@@ -71,6 +90,7 @@ public class HTTPUtil {
       Log.e(getClass().getCanonicalName(),e.getMessage());
     }
 
+    builder.proxy(proxy);
     builder.connectTimeout(5, TimeUnit.SECONDS);
     builder.readTimeout(5, TimeUnit.SECONDS);
     if (cookies == null) {

@@ -38,7 +38,7 @@ public class RequestManager {
   private JSONObject configuration;
 
   public RequestManager(Context ctx){
-    this.http = new HTTPUtil();
+    this.http = new HTTPUtil(ctx);
     this.context=ctx;
     try{
       String config = Utils.getSharedPref(context,"configuration");

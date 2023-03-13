@@ -57,10 +57,6 @@ public class Utils {
   }
 
   public static String getVal(Context context, String val) {
-    String baseurl = Utils.getSharedPref(context, val);
-    if (baseurl != null)
-      return baseurl;
-
     JSONObject res = Utils.getConfigFile(context);
     if (res != null) {
       try {
@@ -89,6 +85,10 @@ public class Utils {
 
   public static String getUserIDClaim(Context context) {
     return getVal(context, "key_userid");
+  }
+
+  public static String getProxy(Context context) {
+    return getVal(context, "proxy");
   }
 
   public static String getADFSBaseUrl(Context context) {
