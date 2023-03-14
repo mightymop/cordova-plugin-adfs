@@ -159,17 +159,6 @@ public class HTTPUtil {
     try {
       response = this.getClient().newCall(builder.build()).execute();
       if (response.isSuccessful()) {
-       /* ByteArrayOutputStream bao = new ByteArrayOutputStream();
-        byte[] buff = new byte[8000];
-
-        int bytesRead = 0;
-
-        while ((bytesRead = response.body().byteStream().read(buff)) != -1) {
-          bao.write(buff, 0, bytesRead);
-        }
-
-        byte[] data = bao.toByteArray();*/
-
         return new String(response.body().string());
       }
       else
