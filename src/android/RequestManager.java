@@ -66,7 +66,18 @@ public class RequestManager {
     if (configuration==null)
     {
       configuration = load_config();
-      Utils.setSharedPref(context,"configuration",configuration.toString());
+      if (!configuration.has("error")) {
+        Utils.setSharedPref(context, "configuration", configuration.toString());
+      }
+      else {
+        try {
+          throw new HttpException(500, "error", configuration.getString("error"));
+        }
+        catch (Exception e)
+        {
+          throw new HttpException(500, "error", "ADFS Konfuguration konnte nicht geladen werden.");
+        }
+      }
     }
 
     String url;
@@ -97,7 +108,18 @@ public class RequestManager {
       if (configuration==null)
       {
         configuration = load_config();
-        Utils.setSharedPref(context,"configuration",configuration.toString());
+        if (!configuration.has("error")) {
+          Utils.setSharedPref(context, "configuration", configuration.toString());
+        }
+        else {
+          try {
+            throw new HttpException(500, "error", configuration.getString("error"));
+          }
+          catch (Exception e)
+          {
+            throw new HttpException(500, "error", "ADFS Konfuguration konnte nicht geladen werden.");
+          }
+        }
       }
 
       URL url = new URL(configuration.getString("token_endpoint"));
@@ -115,7 +137,18 @@ public class RequestManager {
     {
       try {
         configuration = load_config();
-        Utils.setSharedPref(context, "configuration", configuration.toString());
+        if (!configuration.has("error")) {
+          Utils.setSharedPref(context, "configuration", configuration.toString());
+        }
+        else {
+          try {
+            throw new HttpException(500, "error", configuration.getString("error"));
+          }
+          catch (Exception e)
+          {
+            throw new HttpException(500, "error", "ADFS Konfuguration konnte nicht geladen werden.");
+          }
+        }
       }
       catch (Exception e)
       {
@@ -142,7 +175,18 @@ public class RequestManager {
     if (configuration==null)
     {
       configuration = load_config();
-      Utils.setSharedPref(context,"configuration",configuration.toString());
+      if (!configuration.has("error")) {
+        Utils.setSharedPref(context, "configuration", configuration.toString());
+      }
+      else {
+        try {
+          throw new HttpException(500, "error", configuration.getString("error"));
+        }
+        catch (Exception e)
+        {
+          throw new HttpException(500, "error", "ADFS Konfuguration konnte nicht geladen werden.");
+        }
+      }
     }
 
     Uri token_endpoint = Uri.parse(configuration.getString("token_endpoint"));
@@ -164,7 +208,18 @@ public class RequestManager {
       if (configuration==null)
       {
         configuration = load_config();
-        Utils.setSharedPref(context,"configuration",configuration.toString());
+        if (!configuration.has("error")) {
+          Utils.setSharedPref(context, "configuration", configuration.toString());
+        }
+        else {
+          try {
+            throw new HttpException(500, "error", configuration.getString("error"));
+          }
+          catch (Exception e)
+          {
+            throw new HttpException(500, "error", "ADFS Konfuguration konnte nicht geladen werden.");
+          }
+        }
       }
       Uri token_endpoint = Uri.parse(configuration.getString("token_endpoint"));
 

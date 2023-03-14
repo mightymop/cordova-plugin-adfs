@@ -253,7 +253,7 @@ public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity   {
 
         if (strconfig == null) {
           configuration = requestManager.load_config();
-          if (configuration != null) {
+          if (configuration != null && !configuration.has("error")) {
             Utils.setSharedPref(context, "configuration", configuration.toString());
           } else {
             throw new Exception("Laden der Konfiguration nicht möglich!");
