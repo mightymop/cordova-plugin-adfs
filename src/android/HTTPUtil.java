@@ -136,7 +136,7 @@ public class HTTPUtil {
       result = new JSONObject(res);
     } catch (Exception e) {
       result = new JSONObject();
-      result.put("error", "could not load token: " + e.getMessage());
+      result.put("error", "could not load data: " + e.getMessage());
     } finally {
       return result;
     }
