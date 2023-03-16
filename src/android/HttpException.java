@@ -11,6 +11,18 @@ public class HttpException extends Exception{
     this.details=details;
   }
 
+  @Override
+  public String getMessage(){
+    if (super.getMessage()==null||super.getMessage().equalsIgnoreCase("null"))
+    {
+      return this.details;
+    }
+    else
+    {
+      return this.details+" | "+super.getMessage();
+    }
+  }
+
   public HttpException(int code, String message, String details)
   {
     this.code=code;
