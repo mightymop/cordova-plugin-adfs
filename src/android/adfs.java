@@ -1,5 +1,7 @@
 package de.mopsdom.adfs;
 
+import static de.mopsdom.adfs.request.RequestManager.REFRESH_TOKEN_EXP;
+
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.accounts.AccountManagerCallback;
@@ -149,6 +151,17 @@ public class adfs extends CordovaPlugin {
     }
   }
 
+  private void getRefreshTokenExpTime(CallbackContext callbackContext) {
+    Account acc = AccountUtils.getCurrentUser(cordova.getActivity());
+    if (acc != null) {
+      AccountManager accountManager = AccountManager.get(cordova.getActivity());
+      String strexp = accountManager.getUserData(acc, REFRESH_TOKEN_EXP);
+      long millis = Long.parseLong(strexp);
+      callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, millis));
+    } else {
+      callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, "Kein Benutzer angemeldet"));
+    }
+  }
   private void checklogin(CallbackContext callbackContext) {
     Account acc = AccountUtils.getCurrentUser(cordova.getActivity());
     if (acc != null) {
@@ -221,6 +234,10 @@ public class adfs extends CordovaPlugin {
 
           case "checklogin":
             checklogin(callbackContext);
+            break;
+
+          case "getRefreshTokenExpTime":
+            getRefreshTokenExpTime(callbackContext);
             break;
         }
       }

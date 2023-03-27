@@ -20,6 +20,9 @@ var adfs = {
 	},
 	getRefreshToken: function (success, error) {
 		exec(success, error, PLUGIN_NAME, 'getRefreshToken', []);
+	},
+	getRefreshTokenExpTime: function (success, error) {
+		exec(success, error, PLUGIN_NAME, 'getRefreshTokenExpTime', []);
 	}
 
 };
