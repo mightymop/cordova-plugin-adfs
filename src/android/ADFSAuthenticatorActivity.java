@@ -146,6 +146,7 @@ public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity   {
     if (tmp_client_id != null && scope != null && nonce != null && response_type != null) {
       try {
         String redirecturl = RequestManager.REDIRECT_URI.replace("*",getPackageName());
+        Log.w(TAG,"starting auth flow task");
         AuthorizeFlowTask task = new AuthorizeFlowTask(this, tmp_client_id, scope, nonce, response_type, redirecturl);
         task.execute();
       } catch (Exception e) {
@@ -241,7 +242,7 @@ public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity   {
 
       try {
         String strconfig = Utils.getSharedPref(context, "configuration");
-		
+
 		if (strconfig!=null)
         {
           JSONObject json = new JSONObject(strconfig);
@@ -256,7 +257,8 @@ public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity   {
           if (configuration != null && !configuration.has("error")) {
             Utils.setSharedPref(context, "configuration", configuration.toString());
           } else {
-            throw new Exception("Laden der Konfiguration nicht möglich!");
+            errList.add("Laden der Konfiguration nicht möglich!");
+            return false;
           }
         } else {
           configuration = new JSONObject(strconfig);
@@ -276,18 +278,24 @@ public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity   {
         if (authorization_endpoint == null) {
           String err = "Keinen Authorization Endpunkt in der oidc-configuration gefunden.";
           errList.add(err);
+          setErrorResult(String.join("\r\n",errList));
+          finish();
           return;
         }
 
         if (client_id == null) {
           String err = "Es wurde keine client_id angegeben.";
           errList.add(err);
+          setErrorResult(String.join("\r\n",errList));
+          finish();
           return;
         }
 
         if (scope == null) {
           String err = "Es wurde kein scope angegeben.";
           errList.add(err);
+          setErrorResult(String.join("\r\n",errList));
+          finish();
           return;
         } else {
           if (configuration.has("scopes_supported")) {
@@ -307,6 +315,8 @@ public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity   {
             if (newscopestring.trim().length() == 0) {
               String err = "Scope wird nicht unterstützt.";
               errList.add(err);
+              setErrorResult(String.join("\r\n",errList));
+              finish();
               return;
             }
 
@@ -317,6 +327,7 @@ public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity   {
         if (response_type == null) {
           String err = "Es wurde kein response_type angegeben.";
           errList.add(err);
+          super.onPostExecute(false);
           return;
         } else {
           if (configuration.has("response_types_supported")) {
@@ -341,6 +352,8 @@ public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity   {
             if (res_typ == null) {
               String err = "Response_type wird nicht unterstützt.";
               errList.add(err);
+              setErrorResult(String.join("\r\n",errList));
+              finish();
               return;
             }
           }
@@ -408,6 +421,8 @@ public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity   {
       } catch (Exception e) {
         String err = e.getMessage();
         errList.add(err);
+        setErrorResult(String.join("\r\n",errList));
+        finish();
         return;
       }
     }
