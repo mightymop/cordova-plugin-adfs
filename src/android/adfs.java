@@ -12,6 +12,7 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
@@ -126,6 +127,9 @@ public class adfs extends CordovaPlugin {
         callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, data.getExtras().getString("TOKEN_TYPE_ACCESS")));
       }
       else {
+        Log.e(TAG,"RESULTCODE="+String.valueOf(resultCode));
+        Log.e(TAG,data!=null?"DATA!=NULL":"DATA=NULL");
+        Log.e(TAG,data!=null&&data.getExtras()!=null?data.getExtras().getString("TOKEN_TYPE_ACCESS"):"DATA_EXTRAS=NULL");
         //callbackContext.error(data.getExtras().containsKey("error") ? data.getStringExtra("error") : "Ein unbekannter Fehler ist aufgetreten.");
         callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, data!=null&&data.getExtras()!=null&&data.getExtras().containsKey("error") ? data.getStringExtra("error") : "Ein unbekannter Fehler ist aufgetreten."));
       }
@@ -145,8 +149,27 @@ public class adfs extends CordovaPlugin {
           callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
         }
       } else {
+        Log.e(TAG,"RESULTCODE 1="+String.valueOf(resultCode));
+        Log.e(TAG,data!=null?"DATA!=NULL":"DATA=NULL");
+        Log.e(TAG,data!=null&&data.hasExtra("TOKEN_TYPE_ACCESS")?data.getExtras().getString("TOKEN_TYPE_ACCESS"):"TOKEN_TYPE_ACCESS=NULL");
+        Log.e(TAG,data!=null&&data.hasExtra("error")?data.getExtras().getString("error"):"ERROR=NULL");
         //callbackContext.error(data.getExtras().containsKey("error") ? data.getStringExtra("error") : "Ein unbekannter Fehler ist aufgetreten.");
-        callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, data!=null&&data.getExtras()!=null && data.getExtras().containsKey("error") ? data.getStringExtra("error") : "Ein unbekannter Fehler ist aufgetreten."));
+        callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, data!=null&&data.getExtras()!=null && data.hasExtra("error") ? data.getStringExtra("error") : "Ein unbekannter Fehler ist aufgetreten."));
+        cordova.getActivity().runOnUiThread(new Runnable() {
+          @Override
+          public void run() {
+            if (data.hasExtra("error")&&data.getStringExtra("error").contains("\r\n"))
+            {
+              for (int n=0;n<data.getStringExtra("error").split("\r\n").length;n++){
+                Toast.makeText(cordova.getActivity(), data.getStringExtra("error").split("\r\n")[n], Toast.LENGTH_LONG).show();
+              }
+            }
+            else {
+              Toast.makeText(cordova.getActivity(), (data.hasExtra("error") ? data.getStringExtra("error") : "Ein unbekannter Fehler ist aufgetreten."), Toast.LENGTH_LONG).show();
+            }
+          }
+        });
+        System.exit(1);
       }
     }
   }
@@ -176,8 +199,15 @@ public class adfs extends CordovaPlugin {
 
   private void login(CallbackContext callbackContext) {
     this.callbackContext = callbackContext;
-    Intent i = authenticator.getLoginIntent();
-    cordova.startActivityForResult(this, i, LOGIN_RES);
+
+    try {
+      Intent i = authenticator.getLoginIntent();
+      cordova.startActivityForResult(this, i, LOGIN_RES);
+    }
+    catch (Exception e)
+    {
+      Log.e(TAG,e.getMessage());
+    }
   }
 
   @RequiresApi(api = Build.VERSION_CODES.O)
