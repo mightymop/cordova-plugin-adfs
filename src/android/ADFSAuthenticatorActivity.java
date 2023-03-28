@@ -558,6 +558,7 @@ public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity   {
       if (response.has("refresh_token_expires_in")) {
         long exp = response.getLong("refresh_token_expires_in");
         long time = System.currentTimeMillis()+(exp*1000)-60000; //-60000 as buffer
+        Log.i(TAG, "Token expires at: "+String.valueOf(time));
         accountManager.setUserData(account, REFRESH_TOKEN_EXP, String.valueOf(time));
       }
 

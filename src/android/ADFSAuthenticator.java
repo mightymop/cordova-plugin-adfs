@@ -179,6 +179,7 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
           if (jresultJson.has("refresh_token_expires_in")) {
             long exp = jresultJson.getLong("refresh_token_expires_in");
             long time = System.currentTimeMillis()+(exp*1000)-60000;
+            Log.i(TAG, "Token expires at: "+String.valueOf(time));
             accountManager.setUserData(account, REFRESH_TOKEN_EXP, String.valueOf(time));
           }
         } catch (HttpException e) {
@@ -223,10 +224,11 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
           if (isofflinetoken||!isvalid) {
 
             if (exp < System.currentTimeMillis()) {
-
+              Log.w(TAG,"INVALIDIATE "+TOKEN_TYPE_REFRESH+" (EXPIRED)!!!");
               accountManager.invalidateAuthToken(TOKEN_TYPE_REFRESH, token);
               accountManager.setAuthToken(account, TOKEN_TYPE_REFRESH, "");
             }
+            Log.w(TAG,"INVALIDIATE "+authTokenType+" (EXPIRED)!!!");
             accountManager.invalidateAuthToken(authTokenType, token);
             accountManager.setAuthToken(account, authTokenType, "");
             return getAuthToken(response, account, authTokenType, options);
@@ -234,6 +236,7 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
         }
         else {
           if (exp < System.currentTimeMillis()) { //token abgelaufen
+            Log.w(TAG,"INVALIDIATE "+TOKEN_TYPE_REFRESH+" (EXPIRED)!!!");
             accountManager.invalidateAuthToken(TOKEN_TYPE_REFRESH, token);
             accountManager.setAuthToken(account, TOKEN_TYPE_REFRESH, "");
             accountManager.invalidateAuthToken(authTokenType, token);
@@ -242,6 +245,7 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
           }
           else
           { //offline aber refresh_token noch gültig
+            Log.w(TAG,"BUILD OFFLINE TOKEN!!!");
             String offlinetoken = getOfflineToken(token,exp);
             accountManager.invalidateAuthToken(authTokenType, token);
             accountManager.setAuthToken(account, authTokenType, offlinetoken);
