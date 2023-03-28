@@ -117,7 +117,18 @@ public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity   {
     String accountName = extras.getString(KEY_ACCOUNT_NAME);
 
     accountManager = AccountManager.get(this);
-    requestManager = new RequestManager(this);
+    Thread t = new Thread(new Runnable() {
+      @Override
+      public void run() {
+        requestManager = new RequestManager(ADFSAuthenticatorActivity.this);
+      }
+    });
+    t.start();
+    try {
+      t.join(); // wait for the thread to complete
+    } catch (InterruptedException e) {
+      // handle the exception
+    }
 
     if (accountName != null) {
       account = AccountUtils.getAccountByName(this, accountName);
