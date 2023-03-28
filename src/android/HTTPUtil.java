@@ -53,7 +53,7 @@ public class HTTPUtil {
       if (strproxy.contains(":")) {
         proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(strproxy.split(":")[0], Integer.parseInt(strproxy.split(":")[1])));
       } else {
-        proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("proxy", 80));
+        proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(strproxy, 80));
       }
     }
     else {
