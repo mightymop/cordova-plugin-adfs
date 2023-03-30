@@ -50,7 +50,7 @@
 					<action android:name="android.intent.action.VIEW" />
 					<category android:name="android.intent.category.DEFAULT" />
 					<category android:name="android.intent.category.BROWSABLE" />
-					<data android:scheme="adfs" android:host="${packageName}.adfs" android:path="/redirect" android:autolaunch="true"/>
+					<data android:scheme="adfs" android:host="${packageName}.adfs" android:path="/redirect" android:autoVerify="true"/>
 				</intent-filter>
 		</activity>
     </config-file>
