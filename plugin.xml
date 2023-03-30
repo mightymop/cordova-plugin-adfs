@@ -46,11 +46,11 @@
 				  android:exported="true" 
 				  android:launchMode="singleInstance" 
 				  android:windowSoftInputMode="adjustResize">
-				  <intent-filter android:priority="999">
+				  <intent-filter android:priority="999" android:autoVerify="true">
 					<action android:name="android.intent.action.VIEW" />
 					<category android:name="android.intent.category.DEFAULT" />
 					<category android:name="android.intent.category.BROWSABLE" />
-					<data android:scheme="adfs" android:host="${packageName}.adfs" android:path="/redirect" />
+					<data android:scheme="adfs" android:host="${packageName}.adfs" android:path="/redirect" android:autolaunch="true"/>
 				</intent-filter>
 		</activity>
     </config-file>
