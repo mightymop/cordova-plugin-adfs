@@ -221,7 +221,6 @@ public class adfs extends CordovaPlugin {
     Account acc = AccountUtils.getCurrentUser(cordova.getActivity());
     if (acc != null) {
       AccountUtils.setAccountData(cordova.getActivity(), acc, RequestManager.ACCOUNT_STATE_KEY, "0");
-      authenticator.logout(cordova.getContext());
       String strconfig = Utils.getSharedPref(cordova.getActivity(), "configuration");
       if (strconfig != null) {
         try {
@@ -231,6 +230,7 @@ public class adfs extends CordovaPlugin {
           i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
           cordova.getActivity().startActivity(i);
         } catch (Exception e) {
+          Log.e(TAG,e.getMessage());
           authenticator.logout(cordova.getContext());
         }
       }
