@@ -9,6 +9,7 @@ import android.accounts.AccountManagerFuture;
 import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -213,16 +214,33 @@ public class adfs extends CordovaPlugin {
     }
   }
 
+
+
   @RequiresApi(api = Build.VERSION_CODES.O)
   private void logout(CallbackContext callbackContext) {
     Account acc = AccountUtils.getCurrentUser(cordova.getActivity());
     if (acc != null) {
       AccountUtils.setAccountData(cordova.getActivity(), acc, RequestManager.ACCOUNT_STATE_KEY, "0");
       authenticator.logout(cordova.getContext());
-      //callbackContext.success();
+      String strconfig = Utils.getSharedPref(cordova.getActivity(), "configuration");
+      if (strconfig != null) {
+        try {
+          JSONObject configjson = new JSONObject(strconfig);
+          Uri uri = Uri.parse(configjson.getString("end_session_endpoint"));
+          Intent i = new Intent(Intent.ACTION_VIEW, uri);
+          i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+          cordova.getActivity().startActivity(i);
+        } catch (Exception e) {
+          authenticator.logout(cordova.getContext());
+        }
+      }
+      else
+      {
+        authenticator.logout(cordova.getContext());
+      }
+
       callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK,acc.name));
     } else {
-      //callbackContext.error("Kein Benutzer angemeldet");
       callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR,"Kein Benutzer angemeldet"));
     }
   }
