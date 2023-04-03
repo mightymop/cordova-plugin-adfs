@@ -19,6 +19,10 @@ import java.net.URL;
 import de.mopsdom.adfs.http.HTTPUtil;
 import de.mopsdom.adfs.http.HttpException;
 import de.mopsdom.adfs.utils.Utils;
+import okhttp3.Headers;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class RequestManager {
 
@@ -97,32 +101,42 @@ public class RequestManager {
   }
 
   public boolean isServerReachable() {
-    try {
-      if (configuration==null)
-      {
-        configuration = load_config();
-        if (!configuration.has("error")) {
-          Utils.setSharedPref(context, "configuration", configuration.toString());
-        }
-        else {
-          try {
-            throw new HttpException(500, "error", configuration.getString("error"));
+    try
+    {
+        if (configuration==null)
+        {
+          configuration = load_config();
+          if (!configuration.has("error")) {
+            Utils.setSharedPref(context, "configuration", configuration.toString());
           }
-          catch (Exception e)
-          {
-            throw new HttpException(500, "error", "ADFS Konfuguration konnte nicht geladen werden.");
+          else {
+            try {
+              throw new HttpException(500, "error", configuration.getString("error"));
+            }
+            catch (Exception e)
+            {
+              throw new HttpException(500, "error", "ADFS Konfuguration konnte nicht geladen werden.");
+            }
           }
         }
-      }
 
-      URL url = new URL(configuration.getString("token_endpoint"));
-      HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-      connection.setRequestMethod("HEAD");
-      int responseCode = connection.getResponseCode();
-      return responseCode == HttpURLConnection.HTTP_OK;
-    } catch (Exception e) {
-      return false;
-    }
+        OkHttpClient client = this.http.getClient();
+        Request request = new Request.Builder()
+                .head()
+                .url(configuration.getString("token_endpoint"))
+                .build();
+
+
+          Response response = client.newCall(request).execute();
+          if (response.isSuccessful()||response.code()==405) { //405 HEAD method not allowed, but server reacheable
+            return true;
+          } else {
+            return false;
+          }
+      } catch (Exception e) {
+        Log.e("cordova-plugin-adfs",e.getMessage(),e);
+        return false;
+      }
   }
 
   public String getAccesTokenTrustIssuer() {

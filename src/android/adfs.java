@@ -56,19 +56,19 @@ public class adfs extends CordovaPlugin {
     AccountManager accountManager = AccountManager.get(cordova.getActivity());
     if (acc != null) {
       try {
-       Bundle options = new Bundle();
- /*
-       String token = accountManager.blockingGetAuthToken(acc,authTokenType,true);
+      // Bundle options = new Bundle();
+
+      /* String token = accountManager.blockingGetAuthToken(acc,authTokenType,true);
        if (token==null)
        {
          login(callbackContext);
        }
        else {
          callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.OK, token));
-       }*/
+       }
+*/
 
-
-       accountManager.getAuthToken(acc, authTokenType, options, true, new AccountManagerCallback<Bundle>() {
+       accountManager.getAuthToken(acc, authTokenType, null, true, new AccountManagerCallback<Bundle>() {
           @Override
           public void run(AccountManagerFuture<Bundle> future) {
             try {
