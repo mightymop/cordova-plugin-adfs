@@ -84,10 +84,13 @@ public class adfs extends CordovaPlugin {
                 cordova.startActivityForResult(adfs.this, i, LOGIN_REAUTH);
               }
             } catch (AuthenticatorException e) {
+              Log.e(TAG,e.getMessage());
               callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
             } catch (IOException e) {
+              Log.e(TAG,e.getMessage());
               callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
             } catch (OperationCanceledException e) {
+              Log.e(TAG,e.getMessage());
               callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
             }
           }

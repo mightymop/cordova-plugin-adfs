@@ -215,7 +215,7 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
 
       if (!authTokenType.equalsIgnoreCase(TOKEN_TYPE_REFRESH)) {
 
-       if (requestManager.isInternetConnected(context)&&requestManager.isServerReachable()) {
+       if (requestManager.isServerReachable()) {
 
          boolean isofflinetoken=isOfflineToken(token);
 
