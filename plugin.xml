@@ -14,7 +14,7 @@
   </js-module>
 
   <platform name="android">
-	<framework src="com.squareup.okhttp3:okhttp:4.10.0" />
+	<framework src="com.squareup.okhttp3:okhttp:4.9.0" />
 	<framework src="androidx.browser:browser:1.4.0" />
 	<framework src="io.jsonwebtoken:jjwt-api:0.11.2" />
 	<framework src="io.jsonwebtoken:jjwt-impl:0.11.2" />
