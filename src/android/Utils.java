@@ -72,8 +72,13 @@ public class Utils {
     String resourceType = "string";
     String packageName = context.getPackageName();
     int resourceId = context.getResources().getIdentifier(resourceName, resourceType, packageName);
-    String resourceValue = context.getString(resourceId);
-    return resourceValue;
+	if (resourceId!=0)
+	{
+		String resourceValue = context.getString(resourceId);
+		return resourceValue;
+	}
+	else
+		return null;
   }
 
   public static int getLogoutIconIdentifier(Context context)
