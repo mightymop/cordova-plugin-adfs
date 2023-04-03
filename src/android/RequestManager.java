@@ -2,7 +2,10 @@ package de.mopsdom.adfs.request;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
+import android.net.NetworkRequest;
 import android.net.Uri;
 import android.util.Log;
 
@@ -101,6 +104,37 @@ public class RequestManager {
       networkInfo = connectivityManager.getActiveNetworkInfo();
     }
     return networkInfo != null && networkInfo.isConnected();
+  }
+
+  public static boolean isInternetConnected(Context context) {
+    ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+
+    NetworkRequest networkRequest = new NetworkRequest.Builder()
+      .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+      .build();
+
+    ConnectivityManager.NetworkCallback networkCallback = new ConnectivityManager.NetworkCallback() {
+      @Override
+      public void onAvailable(Network network) {
+        // Das Netzwerk ist verfügbar
+        // TODO: Code ausführen, um eine Netzwerkverbindung zu verwenden
+      }
+
+      @Override
+      public void onLost(Network network) {
+        // Das Netzwerk ist nicht mehr verfügbar
+        // TODO: Code ausführen, um auf die Netzwerkunterbrechung zu reagieren
+      }
+    };
+
+    connectivityManager.registerNetworkCallback(networkRequest, networkCallback);
+
+    // Überprüfen, ob eine aktive Netzwerkverbindung vorhanden ist
+    Network activeNetwork = connectivityManager.getActiveNetwork();
+    NetworkCapabilities networkCapabilities = connectivityManager.getNetworkCapabilities(activeNetwork);
+    boolean hasInternetCapability = networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+
+    return hasInternetCapability;
   }
 
   public boolean isServerReachable() {
