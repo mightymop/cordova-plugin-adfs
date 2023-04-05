@@ -78,7 +78,7 @@ public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity   {
       return;
     }
 
-    if (intent.getCategories().contains(Intent.CATEGORY_BROWSABLE)) {
+    if (intent.getCategories()!=null&&intent.getCategories().contains(Intent.CATEGORY_BROWSABLE)) {
       Uri redirectUri = intent.getData();
 
       Map<String,String> results = getDataFromIntent(redirectUri);
