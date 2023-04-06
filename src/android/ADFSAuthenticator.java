@@ -186,7 +186,7 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
           // If the refresh token has expired, we need to launch an intent for the user
           // to get us a new set of tokens by authorising us again.
 
-          Log.d(TAG, "Refresh token expired, launching intent for renewing authorisation.");
+          Log.w(TAG, "Refresh token expired, launching intent for renewing authorisation.");
 
           Bundle result = new Bundle();
 
