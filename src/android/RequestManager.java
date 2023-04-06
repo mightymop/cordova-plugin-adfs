@@ -120,7 +120,7 @@ public class RequestManager {
           }
         }
 
-        OkHttpClient client = this.http.getClient();
+        OkHttpClient client = this.http.createClient(context);
         Request request = new Request.Builder()
                 .head()
                 .url(configuration.getString("token_endpoint"))
@@ -135,7 +135,7 @@ public class RequestManager {
           }
       } catch (Exception e) {
         Log.e("cordova-plugin-adfs",e.getMessage(),e);
-        return false;
+        return true;
       }
   }
 

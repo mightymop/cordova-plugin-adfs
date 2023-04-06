@@ -73,7 +73,7 @@ public class ADFSAuthenticatorActivity extends AccountAuthenticatorActivity   {
   public void onNewIntent(Intent intent) {
     super.onNewIntent(intent);
 
-	Log.w(TAG,"onNewIntent");
+	  Log.w(TAG,"onNewIntent");
     if (intent.getAction()==null||!intent.getAction().equalsIgnoreCase(Intent.ACTION_VIEW)) {
       return;
     }

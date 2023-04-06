@@ -41,9 +41,15 @@ public class HTTPUtil {
   public OkHttpClient getClient() {
       return this.httpClient;
   }
-  public OkHttpClient createClient(Context ctx) {
 
-    if (httpClient != null)
+  public OkHttpClient createClient(Context ctx)
+  {
+    return createClient(ctx,false);
+  }
+
+  public OkHttpClient createClient(Context ctx, boolean forceCreate) {
+
+    if (httpClient != null&&!forceCreate)
       return httpClient;
 
     String strproxy = Utils.getProxy(ctx);
@@ -91,8 +97,8 @@ public class HTTPUtil {
     }
 
     builder.proxy(proxy);
-    builder.connectTimeout(5, TimeUnit.SECONDS);
-    builder.readTimeout(5, TimeUnit.SECONDS);
+    builder.connectTimeout(8, TimeUnit.SECONDS);
+    builder.readTimeout(8, TimeUnit.SECONDS);
     if (cookies == null) {
       cookies = new OkCookieJar();
     }

@@ -8,15 +8,23 @@ import android.accounts.AccountManagerCallback;
 import android.accounts.AccountManagerFuture;
 import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
+import android.content.ComponentName;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.webkit.CookieManager;
+import android.webkit.ValueCallback;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+import androidx.browser.customtabs.CustomTabsCallback;
+import androidx.browser.customtabs.CustomTabsClient;
+import androidx.browser.customtabs.CustomTabsIntent;
+import androidx.browser.customtabs.CustomTabsServiceConnection;
+import androidx.browser.customtabs.CustomTabsSession;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
@@ -57,7 +65,7 @@ public class adfs extends CordovaPlugin {
     AccountManager accountManager = AccountManager.get(cordova.getActivity());
     if (acc != null) {
       try {
-      // Bundle options = new Bundle();
+        // Bundle options = new Bundle();
 
       /* String token = accountManager.blockingGetAuthToken(acc,authTokenType,true);
        if (token==null)
@@ -69,7 +77,7 @@ public class adfs extends CordovaPlugin {
        }
 */
 
-       accountManager.getAuthToken(acc, authTokenType, null, true, new AccountManagerCallback<Bundle>() {
+        accountManager.getAuthToken(acc, authTokenType, null, true, new AccountManagerCallback<Bundle>() {
           @Override
           public void run(AccountManagerFuture<Bundle> future) {
             try {
@@ -197,7 +205,7 @@ public class adfs extends CordovaPlugin {
       //callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, acc.name));
     } else {
       callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, "Kein Benutzer angemeldet"));
-     // callbackContext.error("Kein Benutzer angemeldet");
+      // callbackContext.error("Kein Benutzer angemeldet");
     }
   }
 
@@ -225,24 +233,40 @@ public class adfs extends CordovaPlugin {
       if (strconfig != null) {
         try {
           JSONObject configjson = new JSONObject(strconfig);
+
+          logoutChromeTab(configjson.getString("end_session_endpoint"));
+          String baseurl = Utils.getADFSBaseUrl(cordova.getActivity());
+          String logouturl = baseurl+"/ls/?wa=wsignout1.0";
+          logoutChromeTab(logouturl);
+          /*
           Uri uri = Uri.parse(configjson.getString("end_session_endpoint"));
           Intent i = new Intent(Intent.ACTION_VIEW, uri);
           i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-          cordova.getActivity().startActivity(i);
+          cordova.getActivity().startActivity(i);*/
+          cordova.getActivity().finish();
+
         } catch (Exception e) {
           Log.e(TAG,e.getMessage());
           authenticator.logout(cordova.getContext());
+          cordova.getActivity().finish();
         }
       }
       else
       {
         authenticator.logout(cordova.getContext());
+        cordova.getActivity().finish();
       }
 
       callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK,acc.name));
     } else {
       callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR,"Kein Benutzer angemeldet"));
     }
+  }
+
+  private void logoutChromeTab(String url) {
+    CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
+    CustomTabsIntent customTabsIntent = builder.build();
+    customTabsIntent.launchUrl(cordova.getActivity(), Uri.parse(url));
   }
 
   @Override
