@@ -1,33 +1,12 @@
 # Android:
 
 ### 1. Add plugin
-cordova plugin add https://github.com/mightymop/cordova-plugin-adfs.git
+cordova plugin add https://github.com/mightymop/cordova-plugin-adfs.git#minimal
 ### 2. For Typescript add following code to main ts file: 
 /// &lt;reference types="cordova-plugin-adfs" /&gt;<br/>
 
-### 3. Before build:
-add to config.xml > platform > android
-
-```
-	    <resource-file src="www/assets/config/development.json" target="app/src/main/res/raw/development.json" />
-		<resource-file src="www/assets/config/production.json" target="app/src/main/res/raw/production.json" />
-```
-
-with json config params:
-
-```
-	   "adfs":{
-			"baseurl": "https://dc2019.poldom.local/adfs",
-			"key_userid": "upn",
-			"client_id": "5ecf10b7-617a-4382-a67a-d35e30a66fae",
-			"scope": "openid email profile offline_access allatclaims",
-			"proxy": ""
-		}
-```
-
-The proxy is for reading the openid config and other tasks which needs to connect to adfs, except the 
-custom chrome tab for login (which uses the system proxy)!!!!
-
+### 3. Build And Install Authenticator for Android and configure
+https://github.com/mightymop/cordova-plugin-adfs.git#authenticator
 
 ### 4. Usage:
 
