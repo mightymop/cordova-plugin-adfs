@@ -152,14 +152,14 @@ public class adfs extends CordovaPlugin {
         cordova.getActivity().runOnUiThread(new Runnable() {
           @Override
           public void run() {
-            if (data.hasExtra("error")&&data.getStringExtra("error").contains("\r\n"))
+            if (data!=null&&data.hasExtra("error")&&data.getStringExtra("error").contains("\r\n"))
             {
               for (int n=0;n<data.getStringExtra("error").split("\r\n").length;n++){
                 Toast.makeText(cordova.getActivity(), data.getStringExtra("error").split("\r\n")[n], Toast.LENGTH_LONG).show();
               }
             }
             else {
-              Toast.makeText(cordova.getActivity(), (data.hasExtra("error") ? data.getStringExtra("error") : "Ein unbekannter Fehler ist aufgetreten."), Toast.LENGTH_LONG).show();
+              Toast.makeText(cordova.getActivity(), (data!=null&&data.hasExtra("error") ? data.getStringExtra("error") : "Ein unbekannter Fehler ist aufgetreten."), Toast.LENGTH_LONG).show();
             }
           }
         });
@@ -198,6 +198,12 @@ public class adfs extends CordovaPlugin {
     catch (Exception e)
     {
       Log.e(TAG,e.getMessage());
+      cordova.getActivity().runOnUiThread(new Runnable() {
+        @Override
+        public void run() {
+          Toast.makeText(cordova.getActivity(), e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+      });
     }
   }
 
@@ -250,13 +256,7 @@ public class adfs extends CordovaPlugin {
             break;
 
           case "login":
-            try {
-              login(callbackContext);
-            }
-            catch (Exception e)
-            {
-              Log.e(TAG,e.getMessage());
-            }
+            login(callbackContext);
             break;
 
           case "checklogin":
