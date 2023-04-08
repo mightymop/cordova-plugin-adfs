@@ -35,6 +35,7 @@ public class adfs extends CordovaPlugin {
   public static final String TOKEN_TYPE_REFRESH = "TOKEN_TYPE_REFRESH";
   public static final String REFRESH_TOKEN_EXP = "refresh_token_expires_in";
 
+  private final static int LOGOUT_RES = 100;
   private final static int LOGIN_RES = 110;
   private final static int LOGIN_REAUTH = 111;
 
@@ -132,6 +133,12 @@ public class adfs extends CordovaPlugin {
       }
     }
     else
+      if (requestCode==LOGOUT_RES)
+      {
+        cordova.getActivity().finish();
+        return;
+      }
+      else
     if (requestCode == LOGIN_RES) {
       if (resultCode == cordova.getActivity().RESULT_OK && data != null) {
         JSONObject result = new JSONObject();
@@ -212,8 +219,7 @@ public class adfs extends CordovaPlugin {
     Account acc = Utils.getCurrentUser(cordova.getActivity());
     if (acc != null) {
       Intent i = Utils.getLogoutIntent();
-      cordova.getActivity().startActivity(i);
-      cordova.getActivity().finish();
+      cordova.getActivity().startActivityForResult(i,LOGOUT_RES);
 
       callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK,acc.name));
     } else {
