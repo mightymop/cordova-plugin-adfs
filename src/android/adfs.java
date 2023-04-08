@@ -87,17 +87,22 @@ public class adfs extends CordovaPlugin {
                 callbackContext = callbackCtx;
                 //cordova.startActivityForResult(adfs.this, i, LOGIN_REAUTH);
 
-                startForResultLauncher = cordova.getActivity().registerForActivityResult(
-                  new ActivityResultContracts.StartActivityForResult(),
-                  new ActivityResultCallback<ActivityResult>() {
-                    @Override
-                    public void onActivityResult(ActivityResult aresult) {
-                      startForResultLauncher.unregister();
-                      onActivityResultReauth(aresult);
-                    }
-                  });
+                cordova.getActivity().runOnUiThread(new Runnable() {
+                  @Override
+                  public void run() {
+                    startForResultLauncher = cordova.getActivity().registerForActivityResult(
+                      new ActivityResultContracts.StartActivityForResult(),
+                      new ActivityResultCallback<ActivityResult>() {
+                        @Override
+                        public void onActivityResult(ActivityResult aresult) {
+                          startForResultLauncher.unregister();
+                          onActivityResultReauth(aresult);
+                        }
+                      });
 
-                startForResultLauncher.launch(i);
+                    startForResultLauncher.launch(i);
+                  }
+                });
               }
             } catch (AuthenticatorException e) {
               Log.e(TAG, e.getMessage());
@@ -221,17 +226,22 @@ public class adfs extends CordovaPlugin {
     try {
       Intent i = Utils.getLoginIntent();
 
-      startForResultLauncher = cordova.getActivity().registerForActivityResult(
-        new ActivityResultContracts.StartActivityForResult(),
-        new ActivityResultCallback<ActivityResult>() {
-          @Override
-          public void onActivityResult(ActivityResult aresult) {
-            startForResultLauncher.unregister();
-            onActivityResultLogin(aresult);
-          }
-        });
+      cordova.getActivity().runOnUiThread(new Runnable() {
+        @Override
+        public void run() {
+          startForResultLauncher = cordova.getActivity().registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            new ActivityResultCallback<ActivityResult>() {
+              @Override
+              public void onActivityResult(ActivityResult aresult) {
+                startForResultLauncher.unregister();
+                onActivityResultLogin(aresult);
+              }
+            });
 
-      startForResultLauncher.launch(i);
+          startForResultLauncher.launch(i);
+        }
+      });
 
       // cordova.startActivityForResult(this, i, LOGIN_RES);
     } catch (Exception e) {
@@ -302,17 +312,22 @@ public class adfs extends CordovaPlugin {
       Intent i = Utils.getLogoutIntent();
       // cordova.getActivity().startActivityForResult(i,LOGOUT_RES);
 
-      startForResultLauncher = cordova.getActivity().registerForActivityResult(
-        new ActivityResultContracts.StartActivityForResult(),
-        new ActivityResultCallback<ActivityResult>() {
-          @Override
-          public void onActivityResult(ActivityResult aresult) {
-            startForResultLauncher.unregister();
-            onActivityResultLogout(aresult);
-          }
-        });
+      cordova.getActivity().runOnUiThread(new Runnable() {
+        @Override
+        public void run() {
+          startForResultLauncher = cordova.getActivity().registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            new ActivityResultCallback<ActivityResult>() {
+              @Override
+              public void onActivityResult(ActivityResult aresult) {
+                startForResultLauncher.unregister();
+                onActivityResultLogout(aresult);
+              }
+            });
 
-      startForResultLauncher.launch(i);
+          startForResultLauncher.launch(i);
+        }
+      });
 
       // callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK,acc.name));
     } else {
