@@ -39,19 +39,55 @@ public class adfs extends CordovaPlugin {
   public static final String TOKEN_TYPE_REFRESH = "TOKEN_TYPE_REFRESH";
   public static final String REFRESH_TOKEN_EXP = "refresh_token_expires_in";
   private final static String TAG = "ADFS_PLUGIN";
-/*
-  private final static int LOGOUT_RES = 100;
-  private final static int LOGIN_RES = 110;
-  private final static int LOGIN_REAUTH = 111;*/
-  private ActivityResultLauncher<Intent> startForResultLauncher;
-
+  /*
+    private final static int LOGOUT_RES = 100;
+    private final static int LOGIN_RES = 110;
+    private final static int LOGIN_REAUTH = 111;*/
+  private ActivityResultLauncher<Intent> startForResultLauncherLogin;
+  private ActivityResultLauncher<Intent> startForResultLauncherLogout;
+  private ActivityResultLauncher<Intent> startForResultLauncherReauth;
   private JSONObject request;
-
   private CallbackContext callbackContext;
 
   @Override
   public void initialize(CordovaInterface cordova, CordovaWebView webView) {
     super.initialize(cordova, webView);
+
+    startForResultLauncherReauth = cordova.getActivity().registerForActivityResult(
+      new ActivityResultContracts.StartActivityForResult(),
+      new ActivityResultCallback<ActivityResult>() {
+        @Override
+        public void onActivityResult(ActivityResult aresult) {
+
+          onActivityResultReauth(aresult);
+        }
+      });
+
+    startForResultLauncherLogin = cordova.getActivity().registerForActivityResult(
+      new ActivityResultContracts.StartActivityForResult(),
+      new ActivityResultCallback<ActivityResult>() {
+        @Override
+        public void onActivityResult(ActivityResult aresult) {
+          onActivityResultLogin(aresult);
+        }
+      });
+
+    startForResultLauncherLogout = cordova.getActivity().registerForActivityResult(
+      new ActivityResultContracts.StartActivityForResult(),
+      new ActivityResultCallback<ActivityResult>() {
+        @Override
+        public void onActivityResult(ActivityResult aresult) {
+          onActivityResultLogout(aresult);
+        }
+      });
+  }
+
+  @Override
+  public void onDestroy() {
+    super.onDestroy();
+    startForResultLauncherReauth.unregister();
+    startForResultLauncherLogin.unregister();
+    startForResultLauncherLogout.unregister();
   }
 
   private void getToken(CallbackContext callbackCtx, String authTokenType) {
@@ -90,17 +126,7 @@ public class adfs extends CordovaPlugin {
                 cordova.getActivity().runOnUiThread(new Runnable() {
                   @Override
                   public void run() {
-                    startForResultLauncher = cordova.getActivity().registerForActivityResult(
-                      new ActivityResultContracts.StartActivityForResult(),
-                      new ActivityResultCallback<ActivityResult>() {
-                        @Override
-                        public void onActivityResult(ActivityResult aresult) {
-                          startForResultLauncher.unregister();
-                          onActivityResultReauth(aresult);
-                        }
-                      });
-
-                    startForResultLauncher.launch(i);
+                    startForResultLauncherReauth.launch(i);
                   }
                 });
               }
@@ -229,17 +255,7 @@ public class adfs extends CordovaPlugin {
       cordova.getActivity().runOnUiThread(new Runnable() {
         @Override
         public void run() {
-          startForResultLauncher = cordova.getActivity().registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            new ActivityResultCallback<ActivityResult>() {
-              @Override
-              public void onActivityResult(ActivityResult aresult) {
-                startForResultLauncher.unregister();
-                onActivityResultLogin(aresult);
-              }
-            });
-
-          startForResultLauncher.launch(i);
+          startForResultLauncherLogin.launch(i);
         }
       });
 
@@ -315,17 +331,7 @@ public class adfs extends CordovaPlugin {
       cordova.getActivity().runOnUiThread(new Runnable() {
         @Override
         public void run() {
-          startForResultLauncher = cordova.getActivity().registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            new ActivityResultCallback<ActivityResult>() {
-              @Override
-              public void onActivityResult(ActivityResult aresult) {
-                startForResultLauncher.unregister();
-                onActivityResultLogout(aresult);
-              }
-            });
-
-          startForResultLauncher.launch(i);
+          startForResultLauncherLogout.launch(i);
         }
       });
 
