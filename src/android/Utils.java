@@ -58,6 +58,7 @@ public class Utils {
 
     Intent intent = new Intent();
     intent.setAction("de.mopsdom.adfs.LOGOUT_START");
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_CLEAR_TASK|Intent.FLAG_ACTIVITY_NO_HISTORY);
 
     return intent;
   }

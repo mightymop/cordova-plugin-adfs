@@ -202,6 +202,7 @@ public class adfs extends CordovaPlugin {
         @Override
         public void run() {
           Toast.makeText(cordova.getActivity(), e.getMessage(), Toast.LENGTH_LONG).show();
+          System.exit(1);
         }
       });
     }
