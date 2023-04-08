@@ -211,7 +211,6 @@ public class adfs extends CordovaPlugin {
   private void logout(CallbackContext callbackContext) {
     Account acc = Utils.getCurrentUser(cordova.getActivity());
     if (acc != null) {
-      Utils.setAccountData(cordova.getActivity(), acc, Utils.ACCOUNT_STATE_KEY, "0");
       Intent i = Utils.getLogoutIntent();
       cordova.getActivity().startActivity(i);
       cordova.getActivity().finish();
