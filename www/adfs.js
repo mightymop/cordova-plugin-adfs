@@ -10,7 +10,7 @@ var adfs = {
 		exec(success, error, PLUGIN_NAME, 'checklogin', []);
 	},
 	logout: function (success, error ) {
-		exec(success, error, PLUGIN_NAME, 'logout', [}]);
+		exec(success, error, PLUGIN_NAME, 'logout', []);
 	},
 	getIDToken: function (success, error) {
 		exec(success, error, PLUGIN_NAME, 'getIDToken', []);
