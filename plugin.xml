@@ -33,7 +33,7 @@
 		
 	</config-file>
 	
-    <source-file src="src/android/adfs.java" target-dir="src/de/mopsdom/cordova/adfs"/>
+    <source-file src="src/android/adfs.java" target-dir="src/de/mopsdom/adfs/cordova"/>
 	
 	<source-file src="src/android/Utils.java" target-dir="src/de/mopsdom/adfs/cordova/utils"/>
 
