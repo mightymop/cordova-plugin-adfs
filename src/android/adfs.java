@@ -70,7 +70,7 @@ public class adfs extends CordovaPlugin {
               } else {
                 Intent i = (Intent) result.get(AccountManager.KEY_INTENT);
                 callbackContext = callbackCtx;
-                cordova.startActivityForResult(adfs.this, i, LOGIN_REAUTH);
+                runLogin(i,LOGIN_REAUTH);
               }
             } catch (AuthenticatorException e) {
               Log.e(TAG, e.getMessage());
@@ -157,16 +157,49 @@ public class adfs extends CordovaPlugin {
     }
   }
 
-  private void getRefreshTokenExpTime(CallbackContext callbackContext) {
+  private void getRefreshTokenExpTime(CallbackContext callbackCtx) {
     Account acc = Utils.getCurrentUser(cordova.getActivity());
     if (acc != null) {
       AccountManager accountManager = AccountManager.get(cordova.getActivity());
-      String strexp = accountManager.getUserData(acc, REFRESH_TOKEN_EXP);
-      long millis = Long.parseLong(strexp);
-      callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, millis));
+      accountManager.getAuthToken(acc, TOKEN_TYPE_ID, null, true, new AccountManagerCallback<Bundle>() {
+        @Override
+        public void run(AccountManagerFuture<Bundle> future) {
+          try {
+            Bundle result = future.getResult();
+
+            if (result.keySet().contains(AccountManager.KEY_AUTHTOKEN)) {
+              callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.OK, result.getString(AccountManager.KEY_AUTHTOKEN)));
+              String id_token = result.getString(AccountManager.KEY_AUTHTOKEN);
+
+              long millis = Utils.getExpFromIDToken(id_token);
+              callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.OK, millis));
+            } else {
+              callbackContext = callbackCtx;
+              runLogin((Intent)result.get(AccountManager.KEY_INTENT),LOGIN_REAUTH);
+            }
+          } catch (AuthenticatorException e) {
+            Log.e(TAG, e.getMessage());
+            callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
+          } catch (IOException e) {
+            Log.e(TAG, e.getMessage());
+            callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
+          } catch (OperationCanceledException e) {
+            Log.e(TAG, e.getMessage());
+            callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
+          }
+        }
+      }, null);
+
     } else {
       callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, "Kein Benutzer angemeldet"));
     }
+  }
+
+  private void runLogin(Intent i, int requestCode)
+  {
+    i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    cordova.setActivityResultCallback(adfs.this);
+    cordova.startActivityForResult(adfs.this, i, requestCode);
   }
 
   private void checklogin(CallbackContext callbackContext) {
@@ -183,8 +216,7 @@ public class adfs extends CordovaPlugin {
 
     try {
       Intent i = Utils.getLoginIntent();
-      cordova.startActivityForResult(this, i, LOGIN_RES);
-
+      runLogin(i,LOGIN_RES);
     } catch (Exception e) {
       Log.e(TAG, e.getMessage());
       cordova.getActivity().runOnUiThread(new Runnable() {
@@ -201,7 +233,7 @@ public class adfs extends CordovaPlugin {
     Account acc = Utils.getCurrentUser(cordova.getActivity());
     if (acc != null) {
       Intent i = Utils.getLogoutIntent();
-      cordova.startActivityForResult(this, i, LOGOUT_RES);
+      runLogin(i,LOGOUT_RES);
 
       callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, acc.name));
     } else {
