@@ -14,23 +14,6 @@ public class Utils {
 
   private final static String ACCOUNT_TYPE = "SSO";
   public static final String KEY_IS_NEW_ACCOUNT = "NEW_ACCOUNT";
-  public final static String ACCOUNT_STATE_KEY = "STATUS";
-
-  public static void setAccountData(Context ctx, Account acc, String key, String data) {
-    AccountManager am = (AccountManager) ctx.getSystemService(Context.ACCOUNT_SERVICE);
-    if (acc != null) {
-      am.setUserData(acc, key, data);
-    }
-  }
-
-  public static String getAccountData(Context ctx, Account acc, String key) {
-    AccountManager am = (AccountManager) ctx.getSystemService(Context.ACCOUNT_SERVICE);
-    if (acc != null) {
-      return am.getUserData(acc, key);
-    }
-
-    return null;
-  }
 
   public static Account getCurrentUser(Context ctx) {
     AccountManager am = (AccountManager) ctx.getSystemService(Context.ACCOUNT_SERVICE);
