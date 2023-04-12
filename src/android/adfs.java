@@ -186,7 +186,7 @@ public class adfs extends CordovaPlugin {
             Bundle result = future.getResult();
 
             if (result.keySet().contains(AccountManager.KEY_AUTHTOKEN)) {
-              callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.OK, result.getString(AccountManager.KEY_AUTHTOKEN)));
+
               String id_token = result.getString(AccountManager.KEY_AUTHTOKEN);
 
               long millis = Utils.getExpFromIDToken(id_token);
