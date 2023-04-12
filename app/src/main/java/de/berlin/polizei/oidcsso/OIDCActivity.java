@@ -89,7 +89,7 @@ public class OIDCActivity extends AppCompatActivity {
                             ltask.execute();
                             try {
                                 Boolean done = ltask.get(); // wait for the AsyncTask to complete and get the result
-                                Thread.sleep(3000);
+                                Thread.sleep(1000);
                                 Log.d(TAG,"onCREATE B");
                                 setResult(RESULT_OK,new Intent());
                                 finish();
@@ -160,7 +160,7 @@ public class OIDCActivity extends AppCompatActivity {
                     ltask.execute();
                     try {
                         Boolean done = ltask.get(); // wait for the AsyncTask to complete and get the result
-                        Thread.sleep(3000);
+                        Thread.sleep(1000);
                         Log.d(TAG,"onCREATE I");
                         setResult(RESULT_OK,new Intent());
                         finish();
