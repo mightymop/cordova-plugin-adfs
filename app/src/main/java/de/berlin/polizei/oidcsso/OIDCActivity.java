@@ -36,6 +36,8 @@ public class OIDCActivity extends AppCompatActivity {
     @Override
     protected void onNewIntent(Intent intent) {
 
+        Log.e(TAG,"onNewIntent!!!!");
+
         runRedirect(intent,true);
 
         super.onNewIntent(intent);
@@ -46,6 +48,8 @@ public class OIDCActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         context = getApplicationContext();
+
+        Log.e(TAG,"onCreate!!!!");
 
         if (getIntent().getCategories()!=null&&getIntent().getCategories().contains(Intent.CATEGORY_BROWSABLE)&&getIntent().getAction()!=null&&getIntent().getAction().equalsIgnoreCase(Intent.ACTION_VIEW))
         {
@@ -61,7 +65,7 @@ public class OIDCActivity extends AppCompatActivity {
                     Utils.setSharedPref(context, context.getString(R.string.configuration_key), data);
 
                     if (getIntent().getAction()!=null&&getIntent().getAction().equalsIgnoreCase(ACTION_LOGIN)) {
-                        AuthorizeTask atask = new AuthorizeTask(context, new TaskResultCallback() {
+                        AuthorizeTask atask = new AuthorizeTask(OIDCActivity.this, new TaskResultCallback() {
                             @Override
                             public void onSuccess(String data) {
                                 state = data; //check that the result is from the right request...
@@ -70,6 +74,8 @@ public class OIDCActivity extends AppCompatActivity {
                             @Override
                             public void onError(Exception ex) {
                                 Log.e(TAG, ex.getMessage());
+                                Log.e(TAG,"onCREATE A");
+
                                 setResult(RESULT_CANCELED);
                                 finish();
                             }
@@ -79,11 +85,12 @@ public class OIDCActivity extends AppCompatActivity {
                     else
                     if (getIntent().getAction()!=null&&getIntent().getAction().equalsIgnoreCase(ACTION_LOGOUT)) {
                         if (Utils.getCurrentUser(context)!=null) {
-                            LogoutTask ltask = new LogoutTask(context);
+                            LogoutTask ltask = new LogoutTask(OIDCActivity.this);
                             ltask.execute();
                             try {
                                 Boolean done = ltask.get(); // wait for the AsyncTask to complete and get the result
                                 Thread.sleep(3000);
+                                Log.e(TAG,"onCREATE B");
                                 setResult(RESULT_OK,new Intent());
                                 finish();
                                 return;
@@ -92,16 +99,21 @@ public class OIDCActivity extends AppCompatActivity {
                             } catch (ExecutionException e) {
                                 Log.e(TAG,e.getMessage(),e);
                             }
+
+                            Log.e(TAG,"onCREATE C");
                             setResult(RESULT_CANCELED);
                             finish();
                         }
                         else
                         {
+                            Log.e(TAG,"onCREATE D");
                             setResult(RESULT_CANCELED);
                             finish();
                         }
                     }
                     else {
+
+                        Log.e(TAG,"onCREATE E");
                         setResult(RESULT_CANCELED);
                         finish();
                     }
@@ -110,6 +122,8 @@ public class OIDCActivity extends AppCompatActivity {
                 @Override
                 public void onError(Exception ex) {
                     Log.e(TAG,ex.getMessage());
+
+                    Log.e(TAG,"onCREATE F");
                     setResult(RESULT_CANCELED);
                     finish();
                 }
@@ -119,17 +133,20 @@ public class OIDCActivity extends AppCompatActivity {
         else
         {
             if (getIntent().getAction()!=null&&getIntent().getAction().equalsIgnoreCase(ACTION_LOGIN)) {
-                AuthorizeTask atask = new AuthorizeTask(context, new TaskResultCallback() {
+                AuthorizeTask atask = new AuthorizeTask(OIDCActivity.this, new TaskResultCallback() {
 
                     @Override
                     public void onSuccess(String data) {
                         Utils.setSharedPref(context,"state",data);
                         state = data; //check that the result is from the right request...
+                        Log.e(TAG,"onCREATE H");
                     }
 
                     @Override
                     public void onError(Exception ex) {
                         Log.e(TAG, ex.getMessage());
+
+                        Log.e(TAG,"onCREATE G");
                         setResult(RESULT_CANCELED);
                         finish();
                     }
@@ -139,11 +156,12 @@ public class OIDCActivity extends AppCompatActivity {
             else
             if (getIntent().getAction()!=null&&getIntent().getAction().equalsIgnoreCase(ACTION_LOGOUT)) {
                 if (Utils.getCurrentUser(context)!=null) {
-                    LogoutTask ltask = new LogoutTask(context);
+                    LogoutTask ltask = new LogoutTask(OIDCActivity.this);
                     ltask.execute();
                     try {
                         Boolean done = ltask.get(); // wait for the AsyncTask to complete and get the result
                         Thread.sleep(3000);
+                        Log.e(TAG,"onCREATE I");
                         setResult(RESULT_OK,new Intent());
                         finish();
                         return;
@@ -152,16 +170,19 @@ public class OIDCActivity extends AppCompatActivity {
                     } catch (ExecutionException e) {
                         Log.e(TAG,e.getMessage(),e);
                     }
+                    Log.e(TAG,"onCREATE J");
                     setResult(RESULT_CANCELED);
                     finish();
                 }
                 else
                 {
+                    Log.e(TAG,"onCREATE K");
                     setResult(RESULT_CANCELED);
                     finish();
                 }
             }
             else {
+                Log.e(TAG,"onCREATE L");
                 setResult(RESULT_CANCELED);
                 finish();
             }
@@ -171,6 +192,7 @@ public class OIDCActivity extends AppCompatActivity {
     private void runRedirect(Intent intent, boolean fromNewIntent)
     {
         if (intent.getAction()==null||!intent.getAction().equalsIgnoreCase(Intent.ACTION_VIEW)) {
+            Log.e(TAG,"runRedirect D "+String.valueOf(fromNewIntent));
             return;
         }
 
@@ -200,6 +222,8 @@ public class OIDCActivity extends AppCompatActivity {
                                 intent.putExtra("id_token",id_token);
                                 intent.putExtra("access_token",access_token);
                                 intent.putExtra("refresh_token",refresh_token);
+
+                                Log.e(TAG,"runRedirect A "+String.valueOf(fromNewIntent));
                                 setResult(RESULT_OK,intent);
                                 finish();
                             }
@@ -207,6 +231,7 @@ public class OIDCActivity extends AppCompatActivity {
                             @Override
                             public void onError(Exception ex) {
                                 Log.e(TAG,ex.getMessage());
+                                Log.e(TAG,"runRedirect B "+String.valueOf(fromNewIntent));
                                 setResult(RESULT_CANCELED);
                                 finish();
                             }
@@ -216,5 +241,7 @@ public class OIDCActivity extends AppCompatActivity {
                 }
             }
         }
+
+        Log.e(TAG,"runRedirect C "+String.valueOf(fromNewIntent));
     }
 }

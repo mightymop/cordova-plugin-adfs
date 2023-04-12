@@ -4,6 +4,7 @@ import static de.berlin.polizei.oidcsso.authenticator.ADFSAuthenticator.TOKEN_DA
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -25,7 +26,7 @@ import de.berlin.polizei.oidcsso.utils.Utils;
 
 public class LogoutTask extends AsyncTask<String, Void, Boolean> {
 
-    private Context context;
+    private Activity context;
     private String logoutUrl;
 
     private CustomTabsSession session;
@@ -36,7 +37,7 @@ public class LogoutTask extends AsyncTask<String, Void, Boolean> {
     private CustomTabsClient customTabsClient;
     private CustomTabsCallback callback;
 
-    public LogoutTask(Context c){
+    public LogoutTask(Activity c){
         context=c;
     }
 
@@ -131,9 +132,11 @@ public class LogoutTask extends AsyncTask<String, Void, Boolean> {
                 session.mayLaunchUrl(uri, null, null);
 
                 customTabsIntent.intent.setData(uri);
-                customTabsIntent.intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
 
-                customTabsIntent.launchUrl(context, uri);
+                //customTabsIntent.intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
+
+                context.startActivity(customTabsIntent.intent);
+                //customTabsIntent.launchUrl(context, uri);
 
             }
 

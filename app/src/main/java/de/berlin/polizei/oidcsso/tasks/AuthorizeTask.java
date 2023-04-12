@@ -1,6 +1,7 @@
 package de.berlin.polizei.oidcsso.tasks;
 
 import android.accounts.Account;
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -26,7 +27,7 @@ import de.berlin.polizei.oidcsso.utils.Utils;
 
 public class AuthorizeTask extends AsyncTask<String, Void, Boolean> {
 
-    private Context context;
+    private Activity context;
     private String authorizeUrl;
 
     private CustomTabsSession session;
@@ -39,7 +40,7 @@ public class AuthorizeTask extends AsyncTask<String, Void, Boolean> {
 
     private TaskResultCallback tcb;
 
-    public AuthorizeTask(Context c, TaskResultCallback cb){
+    public AuthorizeTask(Activity c, TaskResultCallback cb){
         context=c;
         tcb=cb;
     }
@@ -122,9 +123,10 @@ public class AuthorizeTask extends AsyncTask<String, Void, Boolean> {
                 session.mayLaunchUrl(uri, null, null);
 
                 customTabsIntent.intent.setData(uri);
-                customTabsIntent.intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
+                //customTabsIntent.intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
 
-                customTabsIntent.launchUrl(context, uri);
+                context.startActivity(customTabsIntent.intent);
+                //customTabsIntent.launchUrl(context, uri);
 
             }
 

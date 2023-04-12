@@ -85,9 +85,7 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
     @RequiresApi(api = Build.VERSION_CODES.O)
     public static void logout(Context context) {
 
-        Intent i = new Intent();
-        i.setAction(ACTION_LOGOUT);
-        //   i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        Intent i = new Intent(ACTION_LOGOUT);
 
         int NOTIFICATION_ID = 11010;
 
@@ -568,8 +566,7 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
      * Create an intent for showing the authorisation web page.
      */
     private Intent createIntentForAuthorization(AccountAuthenticatorResponse response) {
-        Intent intent = new Intent();
-        intent.setAction(ACTION_LOGIN);
+        Intent intent = new Intent(ACTION_LOGIN);
         return intent;
     }
 
