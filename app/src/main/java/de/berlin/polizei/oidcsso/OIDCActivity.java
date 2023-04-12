@@ -49,7 +49,7 @@ public class OIDCActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         context = getApplicationContext();
 
-        Log.e(TAG,"onCreate!!!!");
+        Log.d(TAG,"onCREATE!!!!");
 
         if (getIntent().getCategories()!=null&&getIntent().getCategories().contains(Intent.CATEGORY_BROWSABLE)&&getIntent().getAction()!=null&&getIntent().getAction().equalsIgnoreCase(Intent.ACTION_VIEW))
         {
@@ -74,7 +74,7 @@ public class OIDCActivity extends AppCompatActivity {
                             @Override
                             public void onError(Exception ex) {
                                 Log.e(TAG, ex.getMessage());
-                                Log.e(TAG,"onCREATE A");
+                                Log.d(TAG,"onCREATE A");
 
                                 setResult(RESULT_CANCELED);
                                 finish();
@@ -90,7 +90,7 @@ public class OIDCActivity extends AppCompatActivity {
                             try {
                                 Boolean done = ltask.get(); // wait for the AsyncTask to complete and get the result
                                 Thread.sleep(3000);
-                                Log.e(TAG,"onCREATE B");
+                                Log.d(TAG,"onCREATE B");
                                 setResult(RESULT_OK,new Intent());
                                 finish();
                                 return;
@@ -100,20 +100,20 @@ public class OIDCActivity extends AppCompatActivity {
                                 Log.e(TAG,e.getMessage(),e);
                             }
 
-                            Log.e(TAG,"onCREATE C");
+                            Log.d(TAG,"onCREATE C");
                             setResult(RESULT_CANCELED);
                             finish();
                         }
                         else
                         {
-                            Log.e(TAG,"onCREATE D");
+                            Log.d(TAG,"onCREATE D");
                             setResult(RESULT_CANCELED);
                             finish();
                         }
                     }
                     else {
 
-                        Log.e(TAG,"onCREATE E");
+                        Log.d(TAG,"onCREATE E");
                         setResult(RESULT_CANCELED);
                         finish();
                     }
@@ -123,7 +123,7 @@ public class OIDCActivity extends AppCompatActivity {
                 public void onError(Exception ex) {
                     Log.e(TAG,ex.getMessage());
 
-                    Log.e(TAG,"onCREATE F");
+                    Log.d(TAG,"onCREATE F");
                     setResult(RESULT_CANCELED);
                     finish();
                 }
@@ -139,14 +139,14 @@ public class OIDCActivity extends AppCompatActivity {
                     public void onSuccess(String data) {
                         Utils.setSharedPref(context,"state",data);
                         state = data; //check that the result is from the right request...
-                        Log.e(TAG,"onCREATE H");
+                        Log.d(TAG,"onCREATE H");
                     }
 
                     @Override
                     public void onError(Exception ex) {
                         Log.e(TAG, ex.getMessage());
 
-                        Log.e(TAG,"onCREATE G");
+                        Log.d(TAG,"onCREATE G");
                         setResult(RESULT_CANCELED);
                         finish();
                     }
@@ -161,7 +161,7 @@ public class OIDCActivity extends AppCompatActivity {
                     try {
                         Boolean done = ltask.get(); // wait for the AsyncTask to complete and get the result
                         Thread.sleep(3000);
-                        Log.e(TAG,"onCREATE I");
+                        Log.d(TAG,"onCREATE I");
                         setResult(RESULT_OK,new Intent());
                         finish();
                         return;
@@ -170,19 +170,19 @@ public class OIDCActivity extends AppCompatActivity {
                     } catch (ExecutionException e) {
                         Log.e(TAG,e.getMessage(),e);
                     }
-                    Log.e(TAG,"onCREATE J");
+                    Log.d(TAG,"onCREATE J");
                     setResult(RESULT_CANCELED);
                     finish();
                 }
                 else
                 {
-                    Log.e(TAG,"onCREATE K");
+                    Log.d(TAG,"onCREATE K");
                     setResult(RESULT_CANCELED);
                     finish();
                 }
             }
             else {
-                Log.e(TAG,"onCREATE L");
+                Log.d(TAG,"onCREATE L");
                 setResult(RESULT_CANCELED);
                 finish();
             }
@@ -192,7 +192,7 @@ public class OIDCActivity extends AppCompatActivity {
     private void runRedirect(Intent intent, boolean fromNewIntent)
     {
         if (intent.getAction()==null||!intent.getAction().equalsIgnoreCase(Intent.ACTION_VIEW)) {
-            Log.e(TAG,"runRedirect D "+String.valueOf(fromNewIntent));
+            Log.d(TAG,"runRedirect D "+String.valueOf(fromNewIntent));
             return;
         }
 
@@ -223,7 +223,7 @@ public class OIDCActivity extends AppCompatActivity {
                                 intent.putExtra("access_token",access_token);
                                 intent.putExtra("refresh_token",refresh_token);
 
-                                Log.e(TAG,"runRedirect A "+String.valueOf(fromNewIntent));
+                                Log.d(TAG,"runRedirect A "+String.valueOf(fromNewIntent));
                                 setResult(RESULT_OK,intent);
                                 finish();
                             }
@@ -231,7 +231,7 @@ public class OIDCActivity extends AppCompatActivity {
                             @Override
                             public void onError(Exception ex) {
                                 Log.e(TAG,ex.getMessage());
-                                Log.e(TAG,"runRedirect B "+String.valueOf(fromNewIntent));
+                                Log.d(TAG,"runRedirect B "+String.valueOf(fromNewIntent));
                                 setResult(RESULT_CANCELED);
                                 finish();
                             }
@@ -242,6 +242,6 @@ public class OIDCActivity extends AppCompatActivity {
             }
         }
 
-        Log.e(TAG,"runRedirect C "+String.valueOf(fromNewIntent));
+        Log.d(TAG,"runRedirect C "+String.valueOf(fromNewIntent));
     }
 }
