@@ -111,41 +111,47 @@ public class adfs extends CordovaPlugin {
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent data) {
     super.onActivityResult(requestCode, resultCode, data);
-    Log.e(TAG,"onActivityResult");
+    Log.d(TAG,"onActivityResult");
     if (requestCode == LOGIN_REAUTH) {
-      Log.e(TAG,"onActivityResult LOGIN_REAUTH");
+      Log.d(TAG,"onActivityResult LOGIN_REAUTH");
       if (resultCode == cordova.getActivity().RESULT_OK && data != null) {
-        Log.e(TAG,"onActivityResult LOGIN_REAUTH OK");
-        callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, data.getExtras().getString("TOKEN_TYPE_ACCESS")));
-      } else {
-        Log.e(TAG,"onActivityResult LOGIN_REAUTH ERROR");
-        Log.e(TAG, "RESULTCODE=" + String.valueOf(resultCode));
-        Log.e(TAG, data != null ? "DATA!=NULL" : "DATA=NULL");
-        Log.e(TAG, data != null && data.getExtras() != null ? data.getExtras().getString("TOKEN_TYPE_ACCESS") : "DATA_EXTRAS=NULL");
-        callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, data != null && data.getExtras() != null && data.getExtras().containsKey("error") ? data.getStringExtra("error") : "Ein unbekannter Fehler ist aufgetreten."));
-      }
-    } else if (requestCode == LOGOUT_RES) {
-      Log.e(TAG,"onActivityResult LOGOUT_RES");
-      cordova.getActivity().finish();
-      return;
-    } else if (requestCode == LOGIN_RES) {
-      Log.e(TAG,"onActivityResult LOGIN_RES");
-      if (resultCode == cordova.getActivity().RESULT_OK && data != null) {
-        Log.e(TAG,"onActivityResult LOGIN_RES OK");
+        Log.d(TAG,"onActivityResult LOGIN_REAUTH OK");
         JSONObject result = new JSONObject();
         try {
-          result.put("id_token", data.getExtras().getString("TOKEN_TYPE_ID"));
-          result.put("access_token", data.getExtras().getString("TOKEN_TYPE_ACCESS"));
-          result.put("refresh_token", data.getExtras().getString("TOKEN_TYPE_REFRESH"));
+          result.put("id_token", data.getExtras().getString("id_token"));
+          result.put("access_token", data.getExtras().getString("access_token"));
+          result.put("refresh_token", data.getExtras().getString("refresh_token"));
           callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, result));
         } catch (JSONException e) {
           callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
         }
       } else {
-        Log.e(TAG,"onActivityResult LOGIN_RES ERROR");
+        Log.d(TAG,"onActivityResult LOGIN_REAUTH ERROR");
+        Log.e(TAG, "RESULTCODE=" + String.valueOf(resultCode));
+        callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, data != null && data.getExtras() != null && data.getExtras().containsKey("error") ? data.getStringExtra("error") : "Ein unbekannter Fehler ist aufgetreten."));
+      }
+    } else if (requestCode == LOGOUT_RES) {
+      Log.d(TAG,"onActivityResult LOGOUT_RES");
+      cordova.getActivity().finish();
+      return;
+    } else if (requestCode == LOGIN_RES) {
+      Log.d(TAG,"onActivityResult LOGIN_RES");
+      if (resultCode == cordova.getActivity().RESULT_OK && data != null) {
+        Log.d(TAG,"onActivityResult LOGIN_RES OK");
+        JSONObject result = new JSONObject();
+        try {
+          result.put("id_token", data.getExtras().getString("id_token"));
+          result.put("access_token", data.getExtras().getString("access_token"));
+          result.put("refresh_token", data.getExtras().getString("refresh_token"));
+          callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, result));
+        } catch (JSONException e) {
+          callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
+        }
+      } else {
+        Log.d(TAG,"onActivityResult LOGIN_RES ERROR");
         Log.e(TAG, "RESULTCODE 1=" + String.valueOf(resultCode));
         Log.e(TAG, data != null ? "DATA!=NULL" : "DATA=NULL");
-        Log.e(TAG, data != null && data.hasExtra("TOKEN_TYPE_ACCESS") ? data.getExtras().getString("TOKEN_TYPE_ACCESS") : "TOKEN_TYPE_ACCESS=NULL");
+        Log.e(TAG, data != null && data.hasExtra("access_token") ? data.getExtras().getString("access_token") : "access_token=NULL");
         Log.e(TAG, data != null && data.hasExtra("error") ? data.getExtras().getString("error") : "ERROR=NULL");
         callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, data != null && data.getExtras() != null && data.hasExtra("error") ? data.getStringExtra("error") : "Ein unbekannter Fehler ist aufgetreten."));
         /*cordova.getActivity().runOnUiThread(new Runnable() {
@@ -161,12 +167,12 @@ public class adfs extends CordovaPlugin {
           }
         });*/
 
-        Log.e(TAG,"onActivityResult LOGIN_RES EXIT APP");
+        Log.d(TAG,"onActivityResult LOGIN_RES EXIT APP");
        // System.exit(1);
       }
     }
 
-    Log.e(TAG,"onActivityResult ???");
+    Log.d(TAG,"onActivityResult ???");
   }
 
   private void getRefreshTokenExpTime(CallbackContext callbackCtx) {
