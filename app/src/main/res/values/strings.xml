@@ -1,0 +1,60 @@
+<resources>
+    <string name="app_name">OIDC SSO</string>
+
+    <string name="app_name_config">BasisPol</string>
+    <string name="account_type">SSO</string><!-- has to be equal to cordova plugin static variable-->
+    <string name="account_type_user_label">SSO Konto</string>
+
+    <string name="launcher_name">@string/app_name</string>
+    <string name="activity_name">@string/launcher_name</string>
+
+    <string name="user_id_claim_key">user_id_claim_key</string>
+    <string name="proxy_key">proxy_key</string>
+    <string name="baseurl_key">baseurl_key</string>
+    <string name="client_id_key">client_id_key</string>
+    <string name="redirect_url_key">redirect_url_key</string>
+    <string name="configuration_key">configuration_key</string>
+    <string name="toggle_map_key">toggle_map_key</string>
+    <string name="prompt_key">prompt_key</string>
+    <string name="debug_activity_key">debug_activity_key</string>
+    <string name="logout_redirect_key">logout_redirect_key</string>
+
+    <string name="adfs_config">ADFS Konfiguration</string>
+
+    <string name="logout_redirect">Logout Redirect</string>
+    <string name="logout_redirect_summary">Redirect zurück zur App nach Logout.</string>
+
+    <string name="client_id">Client ID</string>
+    <string name="client_id_summary">Wird vom ADFS Admin ausgegeben.</string>
+
+    <string name="redirect_url">Redirect Url</string>
+    <string name="redirect_url_summary">Rücksprungadresse zur App nach erfolgreicher Anmeldung am ADFS (Deeplink).</string>
+
+    <string name="prompt">Reauthentication</string>
+    <string name="prompt_summary">Credentials beim Refresh abfragen</string>
+
+    <string name="user_id_claim">User ID Claim</string>
+    <string name="user_id_claim_summary">Claim im Token, welcher eine USER-ID enthält</string>
+
+    <string name="debug_activity">Debug Activity</string>
+    <string name="debug_activity_summary">Startet eine Activity zum Testen des OIDC Verfahrens</string>
+
+    <string name="proxy">Proxy</string>
+    <string name="proxy_summary">Proxy (HOSTNAME:PORT) für Token-Aktualisierungen</string>
+
+    <string name="baseurl">ADFS Url</string>
+    <string name="baseurl_summary">Root Adresse zum ADFS Backend</string>
+
+    <string name="configuration">Konfiguration-JSON</string>
+    <string name="refresh_configuration">Konfigurations-JSON aktualisieren</string>
+
+    <string name="toggle_map">Defaultwerte MAP/Poldom</string>
+    <string name="toggle_map_summary_poldom">Defaultwerte (Client_id, Proxy und Baseurl), Aktiv: Poldom</string>
+    <string name="toggle_map_summary_map">Defaultwerte (Client_id, Proxy und Baseurl), Aktiv: MAP</string>
+
+    <string name="confirm">Bestätigen</string>
+    <string name="confirm_map">Sollen die Standardwerte für MAP gesetzt werden?</string>
+    <string name="confirm_poldom">Sollen die Standardwerte für POLDOM gesetzt werden?</string>
+
+    <string name="debug">Debug</string>
+</resources>

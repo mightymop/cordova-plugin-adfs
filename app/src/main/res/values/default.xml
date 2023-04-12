@@ -1,0 +1,12 @@
+
+<resources>
+    <string name="default_client_id_poldom">0050e983-4a4e-4076-8d0d-a1b625c4aa06</string>
+    <string name="default_client_id_map">c1780010-70a7-44d0-b8db-87009266bf08</string>
+    <string name="default_redirect_url">adfs://*.adfs/redirect</string>
+
+    <string name="default_user_id_claim">upn</string>
+    <string name="default_proxy_poldom"></string>
+    <string name="default_proxy_map">172.254.1.10:8080</string>
+    <string name="default_baseurl_poldom">https://dc2019.poldom.local/adfs</string>
+    <string name="default_baseurl_map">https://map-adfs10-v.int.polizei.berlin.de/adfs</string>
+</resources>
