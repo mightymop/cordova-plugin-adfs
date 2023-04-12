@@ -61,20 +61,14 @@ public class Utils {
 
   public static Intent getLoginIntent() {
 
-    Intent intent = new Intent();
-    intent.setAction("de.mopsdom.adfs.LOGIN_START");
-
-    intent.putExtra("ACCOUNT_TYPE", ACCOUNT_TYPE);
-    intent.putExtra(KEY_IS_NEW_ACCOUNT, true);
+    Intent intent = new Intent("de.mopsdom.adfs.LOGIN_START");
 
     return intent;
   }
 
   public static Intent getLogoutIntent() {
 
-    Intent intent = new Intent();
-    intent.setAction("de.mopsdom.adfs.LOGOUT_START");
-  //  intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    Intent intent = new Intent("de.mopsdom.adfs.LOGOUT_START");
 
     return intent;
   }
