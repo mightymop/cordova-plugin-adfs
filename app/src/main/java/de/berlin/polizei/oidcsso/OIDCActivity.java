@@ -74,7 +74,6 @@ public class OIDCActivity extends AppCompatActivity {
                             @Override
                             public void onError(Exception ex) {
                                 Log.e(TAG, ex.getMessage());
-                                Log.d(TAG,"onCREATE A");
 
                                 setResult(RESULT_CANCELED);
                                 finish();
@@ -100,20 +99,17 @@ public class OIDCActivity extends AppCompatActivity {
                                 Log.e(TAG,e.getMessage(),e);
                             }
 
-                            Log.d(TAG,"onCREATE C");
                             setResult(RESULT_CANCELED);
                             finish();
                         }
                         else
                         {
-                            Log.d(TAG,"onCREATE D");
                             setResult(RESULT_CANCELED);
                             finish();
                         }
                     }
                     else {
 
-                        Log.d(TAG,"onCREATE E");
                         setResult(RESULT_CANCELED);
                         finish();
                     }

@@ -345,7 +345,7 @@ public class Utils {
         }
     }
 
-    public static HttpsURLConnection getConnection(Context context, Uri uri, String method) {
+    public static HttpsURLConnection getConnection(Context context, Uri uri, String method, boolean withoutProxy) {
         try
         {
             URL url = new URL(uri.toString());
@@ -353,7 +353,7 @@ public class Utils {
             boolean mapswitch = Utils.getSharedPrefBoolean(context,context.getString(R.string.toggle_map_key));
             String strproxy = Utils.getSharedPref(context,context.getString(R.string.proxy_key),!mapswitch?context.getString(R.string.default_proxy_map):context.getString(R.string.default_proxy_poldom));
             Proxy proxy;
-            if (strproxy!=null&&!strproxy.isEmpty()) {
+            if (!withoutProxy&&strproxy!=null&&!strproxy.isEmpty()) {
                 if (strproxy.contains(":")) {
                     proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(strproxy.split(":")[0], Integer.parseInt(strproxy.split(":")[1])));
                 } else {
@@ -373,7 +373,9 @@ public class Utils {
             conn.setReadTimeout(10000 /* milliseconds */);
             conn.setConnectTimeout(15000 /* milliseconds */);
             conn.setDoInput(true);
-            conn.setDoOutput(true);
+            if (method.equalsIgnoreCase("post")) {
+                conn.setDoOutput(true);
+            }
 
             return conn;
         } catch (IOException e) {

@@ -80,12 +80,11 @@ public class TokenTask extends AsyncTask<String, Void, Boolean> {
         }
     }
 
-    @Override
-    protected Boolean doInBackground(String... args) {
-
+    private Boolean run(boolean withoutproxy)
+    {
         try
         {
-            HttpsURLConnection connection = Utils.getConnection(context,Uri.parse(requestUrl),"POST");
+            HttpsURLConnection connection = Utils.getConnection(context,Uri.parse(requestUrl),"POST",withoutproxy);
             connection.addRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
             String postData = requestUrl.substring(requestUrl.lastIndexOf("?")+1);
@@ -124,8 +123,19 @@ public class TokenTask extends AsyncTask<String, Void, Boolean> {
             this.resultJson = null;
             this.ex=e;
             Log.e(TokenTask.class.getSimpleName(),e.getMessage(),e);
+            if (!withoutproxy)
+            {
+                this.ex=null;
+                return run(true);
+            }
 
             return false;
         }
+    }
+
+    @Override
+    protected Boolean doInBackground(String... args) {
+
+        return run(false);
     }
 }

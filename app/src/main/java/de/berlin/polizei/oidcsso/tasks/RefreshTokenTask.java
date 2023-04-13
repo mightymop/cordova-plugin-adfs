@@ -61,12 +61,11 @@ public class RefreshTokenTask extends AsyncTask<String, Void, String> {
         requestUrl+="&grant_type=refresh_token";
     }
 
-    @Override
-    protected String doInBackground(String... args) {
-
+    private String run(boolean withoutproxy)
+    {
         try
         {
-            HttpsURLConnection connection = Utils.getConnection(context,Uri.parse(requestUrl),"POST");
+            HttpsURLConnection connection = Utils.getConnection(context,Uri.parse(requestUrl),"POST",withoutproxy);
             connection.addRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
             String postData = requestUrl.substring(requestUrl.lastIndexOf("?")+1);
@@ -104,7 +103,17 @@ public class RefreshTokenTask extends AsyncTask<String, Void, String> {
         {
             Log.e(RefreshTokenTask.class.getSimpleName(),e.getMessage(),e);
 
+            if (!withoutproxy)
+            {
+                return run(true);
+            }
             return null;
         }
+    }
+
+    @Override
+    protected String doInBackground(String... args) {
+
+        return run(false);
     }
 }

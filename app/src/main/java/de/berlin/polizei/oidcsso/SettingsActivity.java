@@ -57,26 +57,27 @@ public class SettingsActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         context = this;
-        Utils.initSSL();
+
+        setContentView(R.layout.settings_activity);
+        if (savedInstanceState == null)
+        {
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.settings, new SettingsFragment())
+                    .commit();
+        }
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
+        }
+
+        if (!checkNotificationChannelEnabled()) {
+            openNotiSettings();
+        }
+
         initAppAuth(new InitCallback() {
             @Override
             public void onInit() {
-                setContentView(R.layout.settings_activity);
-                if (savedInstanceState == null)
-                {
-                    getSupportFragmentManager()
-                            .beginTransaction()
-                            .replace(R.id.settings, new SettingsFragment())
-                            .commit();
-                }
-                ActionBar actionBar = getSupportActionBar();
-                if (actionBar != null) {
-                    actionBar.setDisplayHomeAsUpEnabled(true);
-                }
-
-                if (!checkNotificationChannelEnabled()) {
-                    openNotiSettings();
-                }
                 initButtons();
             }
         });
@@ -184,6 +185,9 @@ public class SettingsActivity extends AppCompatActivity {
             }
         });
 
+        btnLogout.setVisibility(View.VISIBLE);
+        btnLogin.setVisibility(View.VISIBLE);
+        btnRefresh.setVisibility(View.VISIBLE);
 
     }
 

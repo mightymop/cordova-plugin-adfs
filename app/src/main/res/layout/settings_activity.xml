@@ -15,6 +15,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_margin="2dp"
+            android:visibility="gone"
             android:text="login" />
 
         <Button
@@ -23,6 +24,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_margin="2dp"
+            android:visibility="gone"
             android:text="refresh" />
 
         <Button
@@ -31,6 +33,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_margin="2dp"
+            android:visibility="gone"
             android:text="logout" />
 
     </LinearLayout>
