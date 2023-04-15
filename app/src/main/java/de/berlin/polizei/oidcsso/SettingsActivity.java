@@ -3,9 +3,17 @@ package de.berlin.polizei.oidcsso;
 import static de.berlin.polizei.oidcsso.OIDCActivity.ACTION_LOGIN;
 import static de.berlin.polizei.oidcsso.OIDCActivity.ACTION_LOGOUT;
 import static de.berlin.polizei.oidcsso.authenticator.ADFSAuthenticator.CHANNEL_ID;
+import static de.berlin.polizei.oidcsso.authenticator.ADFSAuthenticator.TOKEN_TYPE_ACCESS;
+import static de.berlin.polizei.oidcsso.authenticator.ADFSAuthenticator.TOKEN_TYPE_ID;
+import static de.berlin.polizei.oidcsso.authenticator.ADFSAuthenticator.TOKEN_TYPE_REFRESH;
 import static de.berlin.polizei.oidcsso.utils.Utils.outputResponse;
 
 import android.accounts.Account;
+import android.accounts.AccountManager;
+import android.accounts.AccountManagerCallback;
+import android.accounts.AccountManagerFuture;
+import android.accounts.AuthenticatorException;
+import android.accounts.OperationCanceledException;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
@@ -14,10 +22,14 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResult;
@@ -32,6 +44,15 @@ import androidx.core.app.NotificationManagerCompat;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.List;
 
 import de.berlin.polizei.oidcsso.authenticator.ADFSAuthenticator;
@@ -49,16 +70,40 @@ public class SettingsActivity extends AppCompatActivity {
     private Button btnRefresh;
     private Button btnLogout;
 
+    private Button btnTest;
+
     private ActivityResultLauncher<Intent> startForResultLauncher;
 
     private Context context;
+
+    private Handler mHandlerCountdown;
+    private TextView mTextViewCountdown;
+    private TextView mTextViewResult;
+    private TextView mTextViewid;
+    private TextView mTextViewaccess;
+    private TextView mTextViewrefresh;
+    private int mCounter = 0;
+
+    private Window window;
+
+    private boolean first = true;
+    private boolean activeTest = false;
+    private int mInterval = 1000; // Zeitintervall in Millisekunden
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         context = this;
-
         setContentView(R.layout.settings_activity);
+        window = getWindow();
+        mHandlerCountdown = new Handler();
+        mTextViewCountdown = (TextView)findViewById(R.id.countdown);
+        mTextViewResult = (TextView) findViewById(R.id.testresult);
+        mTextViewid = (TextView) findViewById(R.id.testid);
+        mTextViewaccess = (TextView)findViewById(R.id.testaccess);
+        mTextViewrefresh = (TextView)findViewById(R.id.testrefresh);
+
         if (savedInstanceState == null)
         {
             getSupportFragmentManager()
@@ -79,15 +124,235 @@ public class SettingsActivity extends AppCompatActivity {
             @Override
             public void onInit() {
                 initButtons();
+
+                Account acc = Utils.getCurrentUser(context);
+                if (acc!=null)
+                {
+                    btnLogout.setEnabled(true);
+                    btnRefresh.setEnabled(true);
+                    btnLogin.setEnabled(false);
+                }
+                else {
+                    btnLogin.setEnabled(true);
+                    btnRefresh.setEnabled(false);
+                    btnLogout.setEnabled(false);
+                }
             }
         });
     }
 
+    private void showResult(String id,String access, String refresh)
+    {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mTextViewResult.setText("Token request erfolgreich:");
+                if (id!=null) {
+                    mTextViewid.setText(id);
+                }
+                if (access!=null) {
+                    mTextViewaccess.setText(access);
+                }
+                if (refresh!=null) {
+                    mTextViewrefresh.setText(refresh);
+                }
+            }
+        });
+    }
+
+    private void showError(String err)
+    {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mTextViewResult.setText(err);
+
+            }
+        });
+    }
+
+    private Runnable mRunnableCountdown = new Runnable() {
+        @Override
+        public void run() {
+            mCounter++;
+            if (!first) {
+                mTextViewCountdown.setText("nächster Test: " + String.valueOf(60 - mCounter) + " Sek."); // Anzeige des Timerwerts in TextView
+            }
+            else {
+                mTextViewCountdown.setText("nächster Test: " + String.valueOf(10-mCounter)+" Sek."); // Anzeige des Timerwerts in TextView
+            }
+
+            if (first&&mCounter>10)
+            {
+                first=false;
+                runTest();
+            }
+
+            if (mCounter>=60)
+            {
+                mCounter=0;
+
+                runTest();
+            }
+
+            mHandlerCountdown.postDelayed(this, mInterval); // wiederholen der Aktion nach dem Intervall
+        }
+    };
+
+    public static String convertTimestamp(long timestamp) {
+        Instant instant = Instant.ofEpochMilli(timestamp);
+        ZoneId zoneId = ZoneId.systemDefault();
+        ZonedDateTime zonedDateTime = instant.atZone(zoneId);
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss z");
+        return formatter.format(zonedDateTime);
+    }
+
+    private void runTest() {
+        Account current = Utils.getCurrentUser(context);
+        if (current!=null) {
+            AccountManager amgr = AccountManager.get(context);
+            amgr.getAuthToken(current, TOKEN_TYPE_ID, null, SettingsActivity.this, new AccountManagerCallback<Bundle>() {
+                @Override
+                public void run(AccountManagerFuture<Bundle> future) {
+                    try {
+                        Bundle result = future.getResult();
+
+                        if (result.keySet().contains(AccountManager.KEY_AUTHTOKEN)) {
+
+                            String id_token=result.keySet().contains(AccountManager.KEY_AUTHTOKEN)?result.getString(AccountManager.KEY_AUTHTOKEN):null;
+                            String exp="";
+                            if (id_token!=null)
+                            {
+                                JSONObject payload = Utils.getPayload(id_token);
+                                long lexp = payload.getLong("exp");
+                                Log.d(TAG,"ID TOKEN EXP: "+String.valueOf(lexp));
+                                lexp=lexp*1000;
+                                exp = convertTimestamp(lexp);
+                            }
+                            String id="ID TOKEN: "+(id_token!=null?("JA gültig bis: "+exp):"NEIN");
+
+                            showResult(id,null,null);
+                        } else {
+                            showError("Login nötig. Refreshtoken abgelaufen oder nicht erneuerbar? Rufe Login auf.");
+                            Intent i = (Intent) result.get(AccountManager.KEY_INTENT);
+                            startActivity(i);
+                        }
+                    } catch (AuthenticatorException e) {
+                        Log.e(TAG, e.getMessage());
+                        showError(e.getMessage());
+                    } catch (IOException e) {
+                        Log.e(TAG, e.getMessage());
+                        showError(e.getMessage());
+                    } catch (OperationCanceledException e) {
+                        Log.e(TAG, e.getMessage());
+                        showError(e.getMessage());
+                    }
+                    catch (Exception e) {
+                        Log.e(TAG, e.getMessage());
+                        showError(e.getMessage());
+                    }
+                }
+            },null);
+
+            amgr.getAuthToken(current, TOKEN_TYPE_ACCESS, null, SettingsActivity.this, new AccountManagerCallback<Bundle>() {
+                @Override
+                public void run(AccountManagerFuture<Bundle> future) {
+                    try {
+                        Bundle result = future.getResult();
+
+                        if (result.keySet().contains(AccountManager.KEY_AUTHTOKEN)) {
+                            String access_token=result.keySet().contains(AccountManager.KEY_AUTHTOKEN)?result.getString(AccountManager.KEY_AUTHTOKEN):null;
+                            String exp="";
+                            if (access_token!=null)
+                            {
+                                JSONObject payload = Utils.getPayload(access_token);
+                                long lexp = payload.getLong("exp");
+                                Log.d(TAG,"ACCESS TOKEN EXP: "+String.valueOf(lexp));
+                                lexp=lexp*1000;
+                                exp = convertTimestamp(lexp);
+                            }
+                            String access="ACCESS TOKEN: "+(access_token!=null?("JA gültig bis: "+exp):"NEIN");
+
+                            showResult(null,access,null);
+                        } else {
+                            showError("Login nötig. Refreshtoken abgelaufen oder nicht erneuerbar? Rufe Login auf.");
+                            Intent i = (Intent) result.get(AccountManager.KEY_INTENT);
+                            startActivity(i);
+                        }
+                    } catch (AuthenticatorException e) {
+                        Log.e(TAG, e.getMessage());
+                        showError(e.getMessage());
+                    } catch (IOException e) {
+                        Log.e(TAG, e.getMessage());
+                        showError(e.getMessage());
+                    } catch (OperationCanceledException e) {
+                        Log.e(TAG, e.getMessage());
+                        showError(e.getMessage());
+                    } catch (Exception e) {
+                        Log.e(TAG, e.getMessage());
+                        showError(e.getMessage());
+                    }
+                }
+            },null);
+
+            amgr.getAuthToken(current, TOKEN_TYPE_REFRESH, null, SettingsActivity.this, new AccountManagerCallback<Bundle>() {
+                @Override
+                public void run(AccountManagerFuture<Bundle> future) {
+                    try {
+                        Bundle result = future.getResult();
+
+                        if (result.keySet().contains(AccountManager.KEY_AUTHTOKEN)) {
+                            String refresh_token="REFRESH TOKEN: "+(result.keySet().contains(AccountManager.KEY_AUTHTOKEN)
+                                    &&
+                                    result.getString(AccountManager.KEY_AUTHTOKEN)!=null?"JA":"NEIN");
+
+                            showResult(null,null, refresh_token);
+                        } else {
+                            showError("Login nötig. Refreshtoken abgelaufen oder nicht erneuerbar? Rufe Login auf.");
+                            Intent i = (Intent) result.get(AccountManager.KEY_INTENT);
+                            startActivity(i);
+                        }
+                    } catch (AuthenticatorException e) {
+                        Log.e(TAG, e.getMessage());
+                        showError(e.getMessage());
+                    } catch (IOException e) {
+                        Log.e(TAG, e.getMessage());
+                        showError(e.getMessage());
+                    } catch (OperationCanceledException e) {
+                        Log.e(TAG, e.getMessage());
+                        showError(e.getMessage());
+                    }
+                }
+            },null);
+        }
+        else
+        {
+            showError("Login nötig. Refreshtoken abgelaufen oder nicht erneuerbar? Rufe Login auf.");
+            Intent i = new Intent(ACTION_LOGIN);
+            startActivity(i);
+        }
+    }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
+        Account acc = Utils.getCurrentUser(context);
+        if (acc!=null)
+        {
+            btnLogout.setEnabled(true);
+            btnRefresh.setEnabled(true);
+            btnLogin.setEnabled(false);
+        }
+        else {
+            btnLogin.setEnabled(true);
+            btnRefresh.setEnabled(false);
+            btnLogout.setEnabled(false);
+        }
+
         if (resultCode==RESULT_OK)
         {
+
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -125,16 +390,35 @@ public class SettingsActivity extends AppCompatActivity {
         btnLogin = (Button) findViewById(R.id.login);
         btnRefresh = (Button) findViewById(R.id.refresh);
         btnLogout = (Button) findViewById(R.id.logout);
+        btnTest = (Button) findViewById(R.id.test);
+
+        btnTest.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (activeTest)
+                {
+                    btnTest.setText("Start Test");
+                    activeTest=false;
+                    mHandlerCountdown.removeCallbacks(mRunnableCountdown);
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                }
+                else
+                {
+                    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                    first=true;
+                    btnTest.setText("Stop Test");
+                    activeTest=true;
+                    mTextViewCountdown.setText("");
+                    mTextViewResult.setText("");
+                    mHandlerCountdown.postDelayed(mRunnableCountdown, mInterval);
+                }
+            }
+        });
 
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent i = new Intent(ACTION_LOGIN);
-                // i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                //i.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-                //i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                //i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                //i.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
                 startActivityForResult(i,1);
             }
         });
@@ -185,10 +469,17 @@ public class SettingsActivity extends AppCompatActivity {
             }
         });
 
-        btnLogout.setVisibility(View.VISIBLE);
-        btnLogin.setVisibility(View.VISIBLE);
-        btnRefresh.setVisibility(View.VISIBLE);
 
+    }
+
+    @Override
+    protected void onDestroy(){
+        super.onDestroy();
+        if (activeTest)
+        {
+            btnTest.callOnClick();
+        }
+        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
 
     private void initAppAuth(InitCallback callback) {
@@ -326,62 +617,6 @@ public class SettingsActivity extends AppCompatActivity {
                     return true;
                 }
             });
-
-          /*  Preference debugActivityref = findPreference(getString(R.string.debug_activity_key));
-
-            debugActivityref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-                @Override
-                public boolean onPreferenceClick(Preference preference) {
-
-                    Intent i = new Intent(getContext(), LoginActivity.class);
-                    startActivity(i);
-
-                    return true;
-                }
-            });
-
-            Preference configPref = findPreference(getString(R.string.configuration_key));
-            String config = Utils.getSharedPref(getContext(), getContext().getString(R.string.configuration_key));
-            if (config!=null&&!config.isEmpty())
-            {
-                configPref.setSummary(parseConfig(config));
-            }
-            configPref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-                @Override
-                public boolean onPreferenceClick(Preference preference) {
-
-                    Thread t = new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            RequestManager requestManager = new RequestManager(getContext());
-                            try {
-                                JSONObject configuration = requestManager.load_config();
-                                if (!configuration.has("error")) {
-                                    Utils.setSharedPref(getContext(), getContext().getString(R.string.configuration_key), configuration.toString());
-                                    getActivity().runOnUiThread(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            preference.setSummary(parseConfig(configuration.toString()));
-                                            Toast.makeText(getContext(),"Konfiguration geladen",Toast.LENGTH_SHORT).show();
-                                        }
-                                    });
-                                }
-                            } catch (Exception e) {
-                                Log.e(SettingsFragment.class.getSimpleName(),e.getMessage());
-                                getActivity().runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        Toast.makeText(getContext(),e.getMessage(),Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-                            }
-                        }
-                    });
-                    t.start();
-
-                    return true;
-                }
-            });*/
         }
     }
 }
