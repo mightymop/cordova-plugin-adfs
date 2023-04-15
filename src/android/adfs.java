@@ -179,6 +179,7 @@ public class adfs extends CordovaPlugin {
     Account acc = Utils.getCurrentUser(cordova.getActivity());
     if (acc != null) {
       AccountManager accountManager = AccountManager.get(cordova.getActivity());
+
       accountManager.getAuthToken(acc, TOKEN_TYPE_ID, null, true, new AccountManagerCallback<Bundle>() {
         @Override
         public void run(AccountManagerFuture<Bundle> future) {
@@ -187,10 +188,17 @@ public class adfs extends CordovaPlugin {
 
             if (result.keySet().contains(AccountManager.KEY_AUTHTOKEN)) {
 
-              String id_token = result.getString(AccountManager.KEY_AUTHTOKEN);
+              long refresh_token_expires_in = Utils.getNumberFromTokenData(cordova.getActivity(), acc, "refresh_token_expires_in");//geändert in timestamp wann refresh_token abläuft
+              if (refresh_token_expires_in!=-1)
+              {
+                callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.OK, refresh_token_expires_in));
+              }
+              else {
+                String id_token = result.getString(AccountManager.KEY_AUTHTOKEN);
 
-              long millis = Utils.getExpFromIDToken(id_token);
-              callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.OK, millis));
+                long millis = Utils.getExpFromIDToken(id_token);
+                callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.OK, millis));
+              }
             } else {
               callbackContext = callbackCtx;
               runLogin((Intent)result.get(AccountManager.KEY_INTENT),LOGIN_REAUTH);
