@@ -238,6 +238,16 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
                     try {
 
                         String responseresult = refreshToken(context);
+                        if (responseresult==null)
+                        {
+                            result = new Bundle();
+
+                            Intent intent = createIntentForAuthorization(response);
+
+                            result.putParcelable(AccountManager.KEY_INTENT, intent);
+
+                            return result;
+                        }
                         //responseresult schon in Account gemerged
                         Log.i(TAG,"merged data: "+responseresult);
 
@@ -277,7 +287,16 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
                     try {
                         String tresponse = refreshToken(context);
                         tresponse = Utils.prepareData(tresponse);
-                        Utils.mergeData(context,account,tresponse);
+                        if (tresponse==null)
+                        {
+                            result = new Bundle();
+
+                            Intent intent = createIntentForAuthorization(response);
+
+                            result.putParcelable(AccountManager.KEY_INTENT, intent);
+
+                            return result;
+                        }
                         expires_in = Utils.getNumberFromTokenData(context,account,"expires_in");
 
                         if (expires_in <= System.currentTimeMillis()) {

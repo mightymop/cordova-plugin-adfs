@@ -32,6 +32,8 @@ public class OIDCActivity extends AppCompatActivity {
 
     private String state=null;
 
+    private boolean isTest;
+
 
     @Override
     protected void onNewIntent(Intent intent) {
@@ -49,7 +51,7 @@ public class OIDCActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         context = getApplicationContext();
 
-        Log.d(TAG,"onCREATE!!!!");
+        isTest = getIntent().hasExtra("test")&&getIntent().getBooleanExtra("test",false)==true?true:false;
 
         if (getIntent().getCategories()!=null&&getIntent().getCategories().contains(Intent.CATEGORY_BROWSABLE)&&getIntent().getAction()!=null&&getIntent().getAction().equalsIgnoreCase(Intent.ACTION_VIEW))
         {
@@ -77,6 +79,12 @@ public class OIDCActivity extends AppCompatActivity {
 
                                 setResult(RESULT_CANCELED);
                                 finish();
+                                if (isTest)
+                                {
+                                    Intent intent = new Intent(context, SettingsActivity.class);
+                                    intent.putExtra("result",RESULT_CANCELED);
+                                    startActivity(intent);
+                                }
                             }
                         });
                         atask.execute();
@@ -88,10 +96,16 @@ public class OIDCActivity extends AppCompatActivity {
                             ltask.execute();
                             try {
                                 Boolean done = ltask.get(); // wait for the AsyncTask to complete and get the result
-                                Thread.sleep(1000);
-                                Log.d(TAG,"onCREATE B");
+
                                 setResult(RESULT_OK,new Intent());
                                 finish();
+                                if (isTest)
+                                {
+                                   Intent intent = new Intent(context, SettingsActivity.class);
+                                   intent.putExtra("result",RESULT_OK);
+                                   startActivity(intent);
+                                }
+
                                 return;
                             } catch (InterruptedException e) {
                                 Log.e(TAG,e.getMessage(),e);
@@ -101,17 +115,35 @@ public class OIDCActivity extends AppCompatActivity {
 
                             setResult(RESULT_CANCELED);
                             finish();
+                            if (isTest)
+                            {
+                                Intent intent = new Intent(context, SettingsActivity.class);
+                                intent.putExtra("result",RESULT_CANCELED);
+                                startActivity(intent);
+                            }
                         }
                         else
                         {
                             setResult(RESULT_CANCELED);
                             finish();
+                            if (isTest)
+                            {
+                                Intent intent = new Intent(context, SettingsActivity.class);
+                                intent.putExtra("result",RESULT_CANCELED);
+                                startActivity(intent);
+                            }
                         }
                     }
                     else {
 
                         setResult(RESULT_CANCELED);
                         finish();
+                        if (isTest)
+                        {
+                            Intent intent = new Intent(context, SettingsActivity.class);
+                            intent.putExtra("result",RESULT_CANCELED);
+                            startActivity(intent);
+                        }
                     }
                 }
 
@@ -119,9 +151,14 @@ public class OIDCActivity extends AppCompatActivity {
                 public void onError(Exception ex) {
                     Log.e(TAG,ex.getMessage());
 
-                    Log.d(TAG,"onCREATE F");
                     setResult(RESULT_CANCELED);
                     finish();
+                    if (isTest)
+                    {
+                        Intent intent = new Intent(context, SettingsActivity.class);
+                        intent.putExtra("result",RESULT_CANCELED);
+                        startActivity(intent);
+                    }
                 }
             });
             task.execute();
@@ -135,16 +172,20 @@ public class OIDCActivity extends AppCompatActivity {
                     public void onSuccess(String data) {
                         Utils.setSharedPref(context,"state",data);
                         state = data; //check that the result is from the right request...
-                        Log.d(TAG,"onCREATE H");
                     }
 
                     @Override
                     public void onError(Exception ex) {
                         Log.e(TAG, ex.getMessage());
 
-                        Log.d(TAG,"onCREATE G");
                         setResult(RESULT_CANCELED);
                         finish();
+                        if (isTest)
+                        {
+                            Intent intent = new Intent(context, SettingsActivity.class);
+                            intent.putExtra("result",RESULT_CANCELED);
+                            startActivity(intent);
+                        }
                     }
                 });
                 atask.execute();
@@ -156,31 +197,51 @@ public class OIDCActivity extends AppCompatActivity {
                     ltask.execute();
                     try {
                         Boolean done = ltask.get(); // wait for the AsyncTask to complete and get the result
-                        Thread.sleep(1000);
-                        Log.d(TAG,"onCREATE I");
+
                         setResult(RESULT_OK,new Intent());
                         finish();
+                        if (isTest)
+                        {
+                            Intent intent = new Intent(context, SettingsActivity.class);
+                            intent.putExtra("result",RESULT_OK);
+                            startActivity(intent);
+                        }
                         return;
                     } catch (InterruptedException e) {
                         Log.e(TAG,e.getMessage(),e);
                     } catch (ExecutionException e) {
                         Log.e(TAG,e.getMessage(),e);
                     }
-                    Log.d(TAG,"onCREATE J");
                     setResult(RESULT_CANCELED);
                     finish();
+                    if (isTest)
+                    {
+                        Intent intent = new Intent(context, SettingsActivity.class);
+                        intent.putExtra("result",RESULT_CANCELED);
+                        startActivity(intent);
+                    }
                 }
                 else
                 {
-                    Log.d(TAG,"onCREATE K");
                     setResult(RESULT_CANCELED);
                     finish();
+                    if (isTest)
+                    {
+                        Intent intent = new Intent(context, SettingsActivity.class);
+                        intent.putExtra("result",RESULT_CANCELED);
+                        startActivity(intent);
+                    }
                 }
             }
             else {
-                Log.d(TAG,"onCREATE L");
                 setResult(RESULT_CANCELED);
                 finish();
+                if (isTest)
+                {
+                    Intent intent = new Intent(context, SettingsActivity.class);
+                    intent.putExtra("result",RESULT_CANCELED);
+                    startActivity(intent);
+                }
             }
         }
     }
@@ -188,7 +249,6 @@ public class OIDCActivity extends AppCompatActivity {
     private void runRedirect(Intent intent, boolean fromNewIntent)
     {
         if (intent.getAction()==null||!intent.getAction().equalsIgnoreCase(Intent.ACTION_VIEW)) {
-            Log.d(TAG,"runRedirect D "+String.valueOf(fromNewIntent));
             return;
         }
 
@@ -211,7 +271,17 @@ public class OIDCActivity extends AppCompatActivity {
                             @Override
                             public void onSuccess(String data) {
                                 Utils.createAccount(context,data);
-                                Intent intent = new Intent();
+                                Intent intent = null;
+
+                                if (!isTest)
+                                {
+                                    intent = new Intent();
+                                }
+                                else
+                                {
+                                    intent = new Intent(context, SettingsActivity.class);
+                                    intent.putExtra("result",RESULT_OK);
+                                }
                                 String id_token = Utils.getStringFromTokenData(context,Utils.getCurrentUser(context),"id_token");
                                 String access_token = Utils.getStringFromTokenData(context,Utils.getCurrentUser(context),"access_token");
                                 String refresh_token = Utils.getStringFromTokenData(context,Utils.getCurrentUser(context),"refresh_token");
@@ -219,17 +289,26 @@ public class OIDCActivity extends AppCompatActivity {
                                 intent.putExtra("access_token",access_token);
                                 intent.putExtra("refresh_token",refresh_token);
 
-                                Log.d(TAG,"runRedirect A "+String.valueOf(fromNewIntent));
+                                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                                 setResult(RESULT_OK,intent);
                                 finish();
+                                if (isTest)
+                                {
+                                    startActivity(intent);
+                                }
                             }
 
                             @Override
                             public void onError(Exception ex) {
                                 Log.e(TAG,ex.getMessage());
-                                Log.d(TAG,"runRedirect B "+String.valueOf(fromNewIntent));
                                 setResult(RESULT_CANCELED);
                                 finish();
+                                if (isTest)
+                                {
+                                    Intent intent = new Intent(context, SettingsActivity.class);
+                                    intent.putExtra("result",RESULT_CANCELED);
+                                    startActivity(intent);
+                                }
                             }
                         });
                         ttask.execute();
@@ -237,7 +316,5 @@ public class OIDCActivity extends AppCompatActivity {
                 }
             }
         }
-
-        Log.d(TAG,"runRedirect C "+String.valueOf(fromNewIntent));
     }
 }

@@ -73,6 +73,8 @@ public class SettingsActivity extends AppCompatActivity {
     private Button btnTest;
 
     private ActivityResultLauncher<Intent> startForResultLauncher;
+    //private ActivityResultLauncher<Intent> startForResultLauncherLogin;
+   // private ActivityResultLauncher<Intent> startForResultLauncherLogout;
 
     private Context context;
 
@@ -116,6 +118,8 @@ public class SettingsActivity extends AppCompatActivity {
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
 
+        initActivityResult();
+
         if (!checkNotificationChannelEnabled()) {
             openNotiSettings();
         }
@@ -139,6 +143,44 @@ public class SettingsActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    private void initActivityResult(){
+
+        startForResultLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                new ActivityResultCallback<ActivityResult>() {
+                    @Override
+                    public void onActivityResult(ActivityResult aresult) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (!checkNotificationChannelEnabled()) {
+                                    Toast.makeText(getApplicationContext(), "Die Abmeldungsbenachrichtigung ist deaktiviert!", Toast.LENGTH_SHORT).show();
+                                    openNotiSettings();
+                                }
+                            }
+                        });
+                    }
+                });
+
+        /*startForResultLauncherLogin = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                new ActivityResultCallback<ActivityResult>() {
+                    @Override
+                    public void onActivityResult(ActivityResult aresult) {
+                        onAResult(aresult.getResultCode(),aresult.getData());
+                    }
+                });
+
+        startForResultLauncherLogout = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                new ActivityResultCallback<ActivityResult>() {
+                    @Override
+                    public void onActivityResult(ActivityResult aresult) {
+                        onAResult(aresult.getResultCode(),aresult.getData());
+                    }
+                });*/
     }
 
     private void showResult(String id,String access, String refresh)
@@ -166,7 +208,6 @@ public class SettingsActivity extends AppCompatActivity {
             @Override
             public void run() {
                 mTextViewResult.setText(err);
-
             }
         });
     }
@@ -209,6 +250,16 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void runTest() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mTextViewResult.setText("");
+                mTextViewaccess.setText("");
+                mTextViewid.setText("");
+                mTextViewrefresh.setText("");
+            }
+        });
+
         Account current = Utils.getCurrentUser(context);
         if (current!=null) {
             AccountManager amgr = AccountManager.get(context);
@@ -236,6 +287,7 @@ public class SettingsActivity extends AppCompatActivity {
                         } else {
                             showError("Login nötig. Refreshtoken abgelaufen oder nicht erneuerbar? Rufe Login auf.");
                             Intent i = (Intent) result.get(AccountManager.KEY_INTENT);
+                            i.putExtra("test",true);
                             startActivity(i);
                         }
                     } catch (AuthenticatorException e) {
@@ -278,6 +330,7 @@ public class SettingsActivity extends AppCompatActivity {
                         } else {
                             showError("Login nötig. Refreshtoken abgelaufen oder nicht erneuerbar? Rufe Login auf.");
                             Intent i = (Intent) result.get(AccountManager.KEY_INTENT);
+                            i.putExtra("test",true);
                             startActivity(i);
                         }
                     } catch (AuthenticatorException e) {
@@ -311,6 +364,7 @@ public class SettingsActivity extends AppCompatActivity {
                         } else {
                             showError("Login nötig. Refreshtoken abgelaufen oder nicht erneuerbar? Rufe Login auf.");
                             Intent i = (Intent) result.get(AccountManager.KEY_INTENT);
+                            i.putExtra("test",true);
                             startActivity(i);
                         }
                     } catch (AuthenticatorException e) {
@@ -330,13 +384,181 @@ public class SettingsActivity extends AppCompatActivity {
         {
             showError("Login nötig. Refreshtoken abgelaufen oder nicht erneuerbar? Rufe Login auf.");
             Intent i = new Intent(ACTION_LOGIN);
+            i.putExtra("test",true);
             startActivity(i);
         }
     }
-    @Override
+   /* @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        onAResult(resultCode,data);
+    }*/
 
+    @Override
+    protected void onNewIntent(Intent data) {
+        super.onNewIntent(data);
+        onAResult(data.hasExtra("result")?data.getIntExtra("result",RESULT_CANCELED):RESULT_CANCELED,data);
+    }
+
+    private void initButtons() {
+
+        // btnInit = (Button) findViewById(R.id.init);
+        btnLogin = (Button) findViewById(R.id.login);
+        btnRefresh = (Button) findViewById(R.id.refresh);
+        btnLogout = (Button) findViewById(R.id.logout);
+        btnTest = (Button) findViewById(R.id.test);
+
+        btnTest.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (activeTest)
+                {
+                    btnTest.setText("Start Test");
+                    activeTest=false;
+                    mHandlerCountdown.removeCallbacks(mRunnableCountdown);
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                }
+                else
+                {
+                    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                    first=true;
+                    mCounter=0;
+                    btnTest.setText("Stop Test");
+                    activeTest=true;
+                    mTextViewCountdown.setText("");
+                    mTextViewResult.setText("");
+                    mHandlerCountdown.postDelayed(mRunnableCountdown, mInterval);
+                }
+            }
+        });
+
+        btnLogin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(ACTION_LOGIN);
+                //startForResultLauncherLogin.launch(i);
+                i.putExtra("test",true);
+                //startActivityForResult(i,1);
+                startActivity(i);
+            }
+        });
+
+        btnLogout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(ACTION_LOGOUT);
+                i.putExtra("test",true);
+                //startForResultLauncherLogout.launch(i);
+                //startActivityForResult(i,2);
+                startActivity(i);
+            }
+        });
+
+        btnRefresh.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                Account account = Utils.getCurrentUser(context);
+                if (account!=null) {
+                    long refresh_token_expires_in = Utils.getNumberFromTokenData(context, account, "refresh_token_expires_in");//geändert in timestamp wann refresh_token abläuft
+
+                    if (refresh_token_expires_in > System.currentTimeMillis()) {
+
+                        try
+                        {
+                            String response = ADFSAuthenticator.refreshToken(context);
+                            if (response!=null) {
+                                outputResponse(TAG, response);
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(context, "Tokenrefresh erfolgreich.", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
+                            else {
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(context, "Nutzer nicht eingeloggt.", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast.makeText(context, ex.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+                        return;
+                    }
+                }
+
+                Toast.makeText(getApplicationContext(), "Nutzer nicht eingeloggt.", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+
+    }
+
+    @Override
+    protected void onDestroy(){
+        super.onDestroy();
+        if (activeTest)
+        {
+            btnTest.callOnClick();
+        }
+        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
+        //startForResultLauncherLogin.unregister();
+        //startForResultLauncherLogout.unregister();
+        startForResultLauncher.unregister();
+    }
+
+    private void initAppAuth(InitCallback callback) {
+
+        Utils.initSSL();
+        if (Utils.getSharedPref(context,context.getString(R.string.configuration_key))==null) {
+            LoadconfigTask task = new LoadconfigTask(this, new TaskResultCallback() {
+                @Override
+                public void onSuccess(String data) {
+                    Utils.setSharedPref(context, context.getString(R.string.configuration_key), data);
+                    callback.onInit();
+                }
+
+                @Override
+                public void onError(Exception ex) {
+                    Log.e(TAG,ex.getMessage());
+                    setResult(RESULT_CANCELED);
+                    finish();
+                }
+            });
+            task.execute();
+        }
+        else {
+            callback.onInit();
+        }
+    }
+
+    private void openNotiSettings() {
+
+        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                .putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName())
+                .putExtra(Settings.EXTRA_CHANNEL_ID, CHANNEL_ID);
+        Uri uri = Uri.fromParts("package", getPackageName(), null);
+        intent.setData(uri);
+        //startActivityForResult(intent,NOTICHECK);
+
+
+        startForResultLauncher.launch(intent);
+
+    }
+
+    private void onAResult(int resultCode, Intent data){
         Account acc = Utils.getCurrentUser(context);
         if (acc!=null)
         {
@@ -382,159 +604,6 @@ public class SettingsActivity extends AppCompatActivity {
                 }
             });
         }
-    }
-
-    private void initButtons() {
-
-        // btnInit = (Button) findViewById(R.id.init);
-        btnLogin = (Button) findViewById(R.id.login);
-        btnRefresh = (Button) findViewById(R.id.refresh);
-        btnLogout = (Button) findViewById(R.id.logout);
-        btnTest = (Button) findViewById(R.id.test);
-
-        btnTest.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (activeTest)
-                {
-                    btnTest.setText("Start Test");
-                    activeTest=false;
-                    mHandlerCountdown.removeCallbacks(mRunnableCountdown);
-                    window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-                }
-                else
-                {
-                    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-                    first=true;
-                    btnTest.setText("Stop Test");
-                    activeTest=true;
-                    mTextViewCountdown.setText("");
-                    mTextViewResult.setText("");
-                    mHandlerCountdown.postDelayed(mRunnableCountdown, mInterval);
-                }
-            }
-        });
-
-        btnLogin.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent i = new Intent(ACTION_LOGIN);
-                startActivityForResult(i,1);
-            }
-        });
-
-        btnLogout.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent i = new Intent(ACTION_LOGOUT);
-                startActivityForResult(i,2);
-            }
-        });
-
-        btnRefresh.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                Account account = Utils.getCurrentUser(context);
-                if (account!=null) {
-                    long refresh_token_expires_in = Utils.getNumberFromTokenData(context, account, "refresh_token_expires_in");//geändert in timestamp wann refresh_token abläuft
-
-                    if (refresh_token_expires_in > System.currentTimeMillis()) {
-
-                        try
-                        {
-                            String response = ADFSAuthenticator.refreshToken(context);
-                            outputResponse(TAG,response);
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Toast.makeText(context, "Tokenrefresh erfolgreich.", Toast.LENGTH_SHORT).show();
-                                }
-                            });
-                        }
-                        catch (Exception ex)
-                        {
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Toast.makeText(context, ex.getMessage(), Toast.LENGTH_SHORT).show();
-                                }
-                            });
-                        }
-                        return;
-                    }
-                }
-
-                Toast.makeText(getApplicationContext(), "Nutzer nicht eingeloggt.", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-
-    }
-
-    @Override
-    protected void onDestroy(){
-        super.onDestroy();
-        if (activeTest)
-        {
-            btnTest.callOnClick();
-        }
-        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-    }
-
-    private void initAppAuth(InitCallback callback) {
-
-        Utils.initSSL();
-        if (Utils.getSharedPref(context,context.getString(R.string.configuration_key))==null) {
-            LoadconfigTask task = new LoadconfigTask(this, new TaskResultCallback() {
-                @Override
-                public void onSuccess(String data) {
-                    Utils.setSharedPref(context, context.getString(R.string.configuration_key), data);
-                    callback.onInit();
-                }
-
-                @Override
-                public void onError(Exception ex) {
-                    Log.e(TAG,ex.getMessage());
-                    setResult(RESULT_CANCELED);
-                    finish();
-                }
-            });
-            task.execute();
-        }
-        else {
-            callback.onInit();
-        }
-    }
-
-    private void openNotiSettings() {
-
-        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                .putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName())
-                .putExtra(Settings.EXTRA_CHANNEL_ID, CHANNEL_ID);
-        Uri uri = Uri.fromParts("package", getPackageName(), null);
-        intent.setData(uri);
-        //startActivityForResult(intent,NOTICHECK);
-        startForResultLauncher = registerForActivityResult(
-                new ActivityResultContracts.StartActivityForResult(),
-                new ActivityResultCallback<ActivityResult>() {
-                    @Override
-                    public void onActivityResult(ActivityResult aresult) {
-                        startForResultLauncher.unregister();
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                if (!checkNotificationChannelEnabled()) {
-                                    Toast.makeText(getApplicationContext(), "Die Abmeldungsbenachrichtigung ist deaktiviert!", Toast.LENGTH_SHORT).show();
-                                    openNotiSettings();
-                                }
-                            }
-                        });
-                    }
-                });
-
-        startForResultLauncher.launch(intent);
-
     }
 
     public boolean checkNotificationChannelEnabled() {

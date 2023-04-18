@@ -61,6 +61,7 @@
             android:exported="true"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
             android:enabled="true"
+            android:launchMode="singleInstance"
             android:windowSoftInputMode="adjustResize"
             >
             <intent-filter>
