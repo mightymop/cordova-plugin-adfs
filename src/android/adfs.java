@@ -55,9 +55,9 @@ public class adfs extends CordovaPlugin {
 		}
 		catch (Exception e)
 		{
-
+      Log.e(TAG,e.getMessage());
 		}
-		
+
 		if (errcount>20)
 			break;
     }
