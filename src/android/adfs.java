@@ -46,15 +46,20 @@ public class adfs extends CordovaPlugin {
   }
 
   private void getToken(CallbackContext callbackCtx, Account acc, String authTokenType) {
+	int errcount=0;
     while (isInAuthProcess)
     {
-      try {
-        Thread.sleep(200);
-      }
-      catch (Exception e)
-      {
+		errcount++;
+		try {
+			Thread.sleep(200);
+		}
+		catch (Exception e)
+		{
 
-      }
+		}
+		
+		if (errcount>20)
+			break;
     }
     AccountManager accountManager = AccountManager.get(cordova.getActivity());
     if (acc != null) {
