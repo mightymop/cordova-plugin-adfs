@@ -9,4 +9,5 @@
     <string name="default_proxy_map">172.254.1.10:8080</string>
     <string name="default_baseurl_poldom">https://dc2019.poldom.local/adfs</string>
     <string name="default_baseurl_map">https://map-adfs10-v.int.polizei.berlin.de/adfs</string>
+    <string name="default_timeout">20</string>
 </resources>

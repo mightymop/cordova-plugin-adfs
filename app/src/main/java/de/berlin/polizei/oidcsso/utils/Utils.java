@@ -370,8 +370,19 @@ public class Utils {
 
             // Set up the connection properties
             conn.setRequestMethod(method);
-            conn.setReadTimeout(10000 /* milliseconds */);
-            conn.setConnectTimeout(15000 /* milliseconds */);
+            int timeout = 20000;
+
+            try {
+               String strtimeout =  Utils.getSharedPref(context,context.getString(R.string.timeout_key));
+               timeout = Integer.parseInt(strtimeout)*1000;
+            }
+            catch (Exception e)
+            {
+                timeout = 20000;
+            }
+
+            conn.setReadTimeout(timeout /* milliseconds */);
+            conn.setConnectTimeout(timeout /* milliseconds */);
             conn.setDoInput(true);
             if (method.equalsIgnoreCase("post")) {
                 conn.setDoOutput(true);

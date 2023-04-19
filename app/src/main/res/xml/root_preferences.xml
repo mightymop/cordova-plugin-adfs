@@ -38,13 +38,17 @@
             app:summary="@string/baseurl_summary"
             app:useSimpleSummaryProvider="false" />
 
+        <EditTextPreference
+            app:key="@string/timeout_key"
+            app:title="@string/timeout"
+            app:defaultValue="@string/default_timeout"
+            app:summary="@string/timeout_summary"
+            app:useSimpleSummaryProvider="false" />
         <!--Preference
             app:key="@string/configuration_key"
             app:title="@string/refresh_configuration"
             app:useSimpleSummaryProvider="false"
             android:maxLines="25" /-->
-
-
     </PreferenceCategory>
     <PreferenceCategory app:title="@string/debug">
         <SwitchPreference
