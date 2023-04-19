@@ -36,6 +36,8 @@ public class adfs extends CordovaPlugin {
   private final static int LOGIN_RES = 110;
   private final static int LOGIN_REAUTH = 111;
 
+  private Boolean isInAuthProcess = false;
+
   private JSONObject request;
   private CallbackContext callbackContext;
 
@@ -44,6 +46,16 @@ public class adfs extends CordovaPlugin {
   }
 
   private void getToken(CallbackContext callbackCtx, Account acc, String authTokenType) {
+    while (isInAuthProcess)
+    {
+      try {
+        Thread.sleep(200);
+      }
+      catch (Exception e)
+      {
+
+      }
+    }
     AccountManager accountManager = AccountManager.get(cordova.getActivity());
     if (acc != null) {
       try {
@@ -130,6 +142,7 @@ public class adfs extends CordovaPlugin {
         Log.e(TAG, "RESULTCODE=" + String.valueOf(resultCode));
         callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, data != null && data.getExtras() != null && data.getExtras().containsKey("error") ? data.getStringExtra("error") : "Ein unbekannter Fehler ist aufgetreten."));
       }
+      isInAuthProcess=false;
     } else if (requestCode == LOGOUT_RES) {
       Log.d(TAG,"onActivityResult LOGOUT_RES");
       cordova.getActivity().finish();
@@ -170,6 +183,8 @@ public class adfs extends CordovaPlugin {
         Log.d(TAG,"onActivityResult LOGIN_RES EXIT APP");
        // System.exit(1);
       }
+
+      isInAuthProcess=false;
     }
 
     Log.d(TAG,"onActivityResult ???");
@@ -225,6 +240,7 @@ public class adfs extends CordovaPlugin {
   {
     //i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     //cordova.setActivityResultCallback(adfs.this);
+    isInAuthProcess=true;
     cordova.startActivityForResult(adfs.this, i, requestCode);
   }
 
