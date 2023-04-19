@@ -56,6 +56,7 @@ import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.JwtParserBuilder;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.gson.io.GsonDeserializer;
 
 public class ADFSAuthenticator extends AbstractAccountAuthenticator {
@@ -439,7 +440,9 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
 
                 if (localKeys == null) {
                     localKeys = getPublicKeys();
-                    saveKeys(ctx, localKeys);
+                    if (localKeys!=null) {
+                        saveKeys(ctx, localKeys);
+                    }
                 }
 
                 if (localKeys == null || !localKeys.has("keys")) {
@@ -451,12 +454,6 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
                     return key;
                 }
 
-                localKeys = getPublicKeys();
-                saveKeys(ctx, localKeys);
-
-                if ((key = searchKey(localKeys, x5t, alg, kid)) != null) {
-                    return key;
-                }
                 return null;
             }
         } catch (Exception e) {
@@ -576,6 +573,29 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
             return true;
         } catch (Exception e) {
             Log.e(TAG, e.getMessage());
+            if (e instanceof UnsupportedJwtException)
+            {
+                try {
+                    JSONObject payload = Utils.getPayload(token);
+
+                    Date expiration = payload.has("exp")?new Date(payload.getLong("exp")):null;
+                    if (expiration != null && expiration.before(new Date())) {
+                        return false;
+                    }
+
+                    // Check the "nbf" claim to ensure the token is not used before it's valid
+                    Date notBefore = payload.has("nbf")?new Date(payload.getLong("nbf")):null;
+                    if (notBefore != null && notBefore.after(new Date())) {
+                        return false;
+                    }
+
+                    return true;
+                }
+                catch (Exception ex2)
+                {
+                    Log.e(TAG, ex2.getMessage());
+                }
+            }
             // Token is not valid
             return false;
         }
