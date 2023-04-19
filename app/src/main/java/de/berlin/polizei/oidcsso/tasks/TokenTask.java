@@ -5,6 +5,8 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import net.openid.appauth.AuthorizationService;
+
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -21,20 +23,15 @@ import de.berlin.polizei.oidcsso.R;
 import de.berlin.polizei.oidcsso.interfaces.TaskResultCallback;
 import de.berlin.polizei.oidcsso.utils.Utils;
 
-public class TokenTask extends AsyncTask<String, Void, Boolean> {
+public class TokenTask extends BasePostTask {
 
-    private Context context;
-    private String requestUrl;
-    private String resultJson;
-    private TaskResultCallback callback;
     private String code;
-
-    private Exception ex;
+    private TaskResultCallback callback;
 
     public TokenTask(Context c, String code, TaskResultCallback cb){
-        context=c;
-        callback=cb;
+        super(c);
         this.code=code;
+        this.callback=cb;
     }
 
     @Override
@@ -69,10 +66,10 @@ public class TokenTask extends AsyncTask<String, Void, Boolean> {
     }
 
     @Override
-    protected void onPostExecute(Boolean success) {
-        if (success)
+    protected void onPostExecute(String success) {
+        if (success!=null)
         {
-            callback.onSuccess(this.resultJson);
+            callback.onSuccess(resultJson);
         }
         else
         {
@@ -80,62 +77,4 @@ public class TokenTask extends AsyncTask<String, Void, Boolean> {
         }
     }
 
-    private Boolean run(boolean withoutproxy)
-    {
-        try
-        {
-            HttpsURLConnection connection = Utils.getConnection(context,Uri.parse(requestUrl),"POST",withoutproxy);
-            connection.addRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-
-            String postData = requestUrl.substring(requestUrl.lastIndexOf("?")+1);
-            OutputStream outputStream = connection.getOutputStream();
-            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream));
-
-            writer.write(postData);
-            writer.flush();
-
-            InputStream inputStream = connection.getInputStream();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-            StringBuilder result = new StringBuilder();
-
-            String line;
-            while ((line = reader.readLine()) != null) {
-                result.append(line);
-            }
-
-            // Disconnect the connection
-            connection.disconnect();
-
-            if (connection.getResponseCode()<300) {
-                // Return the result as a string
-                this.resultJson = result.toString();
-                return true;
-            }
-            else
-            {
-                this.ex = new Exception(connection.getResponseMessage());
-                Log.e(TokenTask.class.getSimpleName(),connection.getResponseMessage()+": "+result.toString());
-                return false;
-            }
-        }
-        catch (Exception e)
-        {
-            this.resultJson = null;
-            this.ex=e;
-            Log.e(TokenTask.class.getSimpleName(),e.getMessage(),e);
-            if (!withoutproxy)
-            {
-                this.ex=null;
-                return run(true);
-            }
-
-            return false;
-        }
-    }
-
-    @Override
-    protected Boolean doInBackground(String... args) {
-
-        return run(false);
-    }
 }

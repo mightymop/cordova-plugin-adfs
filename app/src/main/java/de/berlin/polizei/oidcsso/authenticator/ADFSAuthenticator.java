@@ -19,6 +19,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -33,6 +34,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.net.URL;
@@ -157,7 +159,19 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
             rtask.execute();
             try {
                 String result = rtask.get(); // wait for the AsyncTask to complete and get the result
-                return result;
+                if (result!=null)
+                {
+                    String resultMerged = Utils.getTokenData(context,Utils.getCurrentUser(context));
+                    if (resultMerged!=null)
+                    {
+                        return resultMerged;
+                    }
+                    else {
+                        return result;
+                    }
+                }
+
+                Log.e(TAG,rtask.getException()!=null?rtask.getException().getMessage():"UNBEKANNTER FEHLER BEIM TOKEN REFRESH");
             } catch (InterruptedException e) {
                 Log.e(TAG,e.getMessage(),e);
             } catch (ExecutionException e) {
@@ -287,7 +301,9 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
 
                     try {
                         String tresponse = refreshToken(context);
-                        tresponse = Utils.prepareData(tresponse);
+                        if (tresponse!=null) {
+                            tresponse = Utils.prepareData(tresponse);
+                        }
                         if (tresponse==null)
                         {
                             result = new Bundle();
@@ -298,6 +314,7 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
 
                             return result;
                         }
+
                         expires_in = Utils.getNumberFromTokenData(context,account,"expires_in");
 
                         if (expires_in <= System.currentTimeMillis()) {
@@ -443,6 +460,9 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
                     if (localKeys!=null) {
                         saveKeys(ctx, localKeys);
                     }
+                    else {
+                        Log.e(TAG,"COULD NOT GET PUBLIC KEYS!!!");
+                    }
                 }
 
                 if (localKeys == null || !localKeys.has("keys")) {
@@ -493,18 +513,22 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
 
             JSONObject config = new JSONObject(Utils.getSharedPref(context,context.getString(R.string.configuration_key)));
             if (config.has("jwks_uri")) {
-                URL url = new URL(config.getString("jwks_uri"));
-                HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
 
-                try (BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()))) {
-                    String inputLine;
-                    StringBuilder content = new StringBuilder();
-                    while ((inputLine = in.readLine()) != null) {
-                        content.append(inputLine);
-                    }
+                HttpsURLConnection con = Utils.getConnection(context, Uri.parse(config.getString("jwks_uri")),"GET",false);
+                con.connect();
 
-                    return new JSONObject(content.toString());
-                } finally {
+                InputStream inputStream = con.getInputStream();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+                StringBuilder result = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    result.append(line);
+                }
+
+                try {
+                    return new JSONObject(result.toString());
+                }
+                finally {
                     con.disconnect();
                 }
             }

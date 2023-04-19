@@ -78,7 +78,7 @@ public class AuthorizeTask extends AsyncTask<String, Void, Boolean> {
         authorizeUrl+="&redirect_uri="+redirect_uri.replace("*",context.getPackageName());
         authorizeUrl+="&state="+state;
 
-        if (Utils.getSharedPrefBoolean(context, context.getString(R.string.prompt_key))) {
+        if (Utils.getSharedPrefBooleanDef(context, context.getString(R.string.prompt_key), true)) {
             authorizeUrl+="&prompt=login";
         }
 

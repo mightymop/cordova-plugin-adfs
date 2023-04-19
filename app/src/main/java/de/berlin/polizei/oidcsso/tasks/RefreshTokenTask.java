@@ -20,16 +20,22 @@ import de.berlin.polizei.oidcsso.R;
 import de.berlin.polizei.oidcsso.interfaces.TaskResultCallback;
 import de.berlin.polizei.oidcsso.utils.Utils;
 
-public class RefreshTokenTask extends AsyncTask<String, Void, String> {
-
-    private Context context;
-    private String requestUrl;
+public class RefreshTokenTask extends BasePostTask {
 
     private String refresh_token;
 
     public RefreshTokenTask(Context c, String refresh_token){
-        context=c;
+        super(c);;
         this.refresh_token=refresh_token;
+    }
+
+    @Override
+    protected void onPostExecute(String result)
+    {
+        if (result!=null)
+        {
+            Utils.mergeData(context, Utils.getCurrentUser(context),result);
+        }
     }
 
     @Override
@@ -61,59 +67,4 @@ public class RefreshTokenTask extends AsyncTask<String, Void, String> {
         requestUrl+="&grant_type=refresh_token";
     }
 
-    private String run(boolean withoutproxy)
-    {
-        try
-        {
-            HttpsURLConnection connection = Utils.getConnection(context,Uri.parse(requestUrl),"POST",withoutproxy);
-            connection.addRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-
-            String postData = requestUrl.substring(requestUrl.lastIndexOf("?")+1);
-            OutputStream outputStream = connection.getOutputStream();
-            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream));
-
-            writer.write(postData);
-            writer.flush();
-
-            InputStream inputStream = connection.getInputStream();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-            StringBuilder result = new StringBuilder();
-
-            String line;
-            while ((line = reader.readLine()) != null) {
-                result.append(line);
-            }
-
-            // Disconnect the connection
-            connection.disconnect();
-
-            // Return the result as a string
-            if (connection.getResponseCode()<300) {
-                // Return the result as a string
-                Utils.mergeData(context,Utils.getCurrentUser(context),result.toString());
-                return Utils.getTokenData(context,Utils.getCurrentUser(context));
-            }
-            else
-            {
-                Log.e(TokenTask.class.getSimpleName(),connection.getResponseMessage()+": "+result.toString());
-                return null;
-            }
-        }
-        catch (Exception e)
-        {
-            Log.e(RefreshTokenTask.class.getSimpleName(),e.getMessage(),e);
-
-            if (!withoutproxy)
-            {
-                return run(true);
-            }
-            return null;
-        }
-    }
-
-    @Override
-    protected String doInBackground(String... args) {
-
-        return run(false);
-    }
 }

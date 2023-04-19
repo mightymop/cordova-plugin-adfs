@@ -2,6 +2,7 @@ package de.berlin.polizei.oidcsso;
 
 import static de.berlin.polizei.oidcsso.utils.Utils.getDataFromUri;
 
+import android.accounts.Account;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -271,29 +272,35 @@ public class OIDCActivity extends AppCompatActivity {
                             @Override
                             public void onSuccess(String data) {
                                 Utils.createAccount(context,data);
+                                Account acc = Utils.getCurrentUser(context);
+
                                 Intent intent = null;
 
-                                if (!isTest)
-                                {
+                                if (!isTest) {
                                     intent = new Intent();
+                                } else {
+                                    intent = new Intent(context, SettingsActivity.class);
+                                    intent.putExtra("result", RESULT_OK);
+                                }
+
+                                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+
+                                if (acc!=null) {
+                                    String id_token = Utils.getStringFromTokenData(context, Utils.getCurrentUser(context), "id_token");
+                                    String access_token = Utils.getStringFromTokenData(context, Utils.getCurrentUser(context), "access_token");
+                                    String refresh_token = Utils.getStringFromTokenData(context, Utils.getCurrentUser(context), "refresh_token");
+                                    intent.putExtra("id_token", id_token);
+                                    intent.putExtra("access_token", access_token);
+                                    intent.putExtra("refresh_token", refresh_token);
+                                    setResult(RESULT_OK, intent);
                                 }
                                 else
                                 {
-                                    intent = new Intent(context, SettingsActivity.class);
-                                    intent.putExtra("result",RESULT_OK);
+                                    setResult(RESULT_CANCELED, intent);
                                 }
-                                String id_token = Utils.getStringFromTokenData(context,Utils.getCurrentUser(context),"id_token");
-                                String access_token = Utils.getStringFromTokenData(context,Utils.getCurrentUser(context),"access_token");
-                                String refresh_token = Utils.getStringFromTokenData(context,Utils.getCurrentUser(context),"refresh_token");
-                                intent.putExtra("id_token",id_token);
-                                intent.putExtra("access_token",access_token);
-                                intent.putExtra("refresh_token",refresh_token);
 
-                                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-                                setResult(RESULT_OK,intent);
                                 finish();
-                                if (isTest)
-                                {
+                                if (isTest) {
                                     startActivity(intent);
                                 }
                             }

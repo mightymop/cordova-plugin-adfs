@@ -15,7 +15,13 @@ import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URL;
@@ -33,6 +39,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 import de.berlin.polizei.oidcsso.R;
+import de.berlin.polizei.oidcsso.tasks.TokenTask;
 
 public class Utils {
 
@@ -68,9 +75,13 @@ public class Utils {
         return sharedPref.getString(key, def);
     }
 
-    public static boolean getSharedPrefBoolean(Context ctx, String key) {
+    public static boolean getSharedPrefBooleanDef(Context ctx, String key, boolean defaultval) {
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(ctx);
-        return sharedPref.getBoolean(key, false);
+        return sharedPref.getBoolean(key, defaultval);
+    }
+
+    public static boolean getSharedPrefBoolean(Context ctx, String key) {
+        return getSharedPrefBooleanDef(ctx,key,false);
     }
 
     public static Account getCurrentUser(Context ctx) {
@@ -394,6 +405,7 @@ public class Utils {
             return null;
         }
     }
+
 
     public static JSONObject getHeader(String token) {
 
