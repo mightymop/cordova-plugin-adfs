@@ -198,43 +198,45 @@ public class adfs extends CordovaPlugin {
   private void getRefreshTokenExpTime(CallbackContext callbackCtx) {
     Account acc = Utils.getCurrentUser(cordova.getActivity());
     if (acc != null) {
-      AccountManager accountManager = AccountManager.get(cordova.getActivity());
 
-      accountManager.getAuthToken(acc, TOKEN_TYPE_ID, null, true, new AccountManagerCallback<Bundle>() {
-        @Override
-        public void run(AccountManagerFuture<Bundle> future) {
-          try {
-            Bundle result = future.getResult();
+      long refresh_token_expires_in = Utils.getNumberFromTokenData(cordova.getActivity(), acc, "refresh_token_expires_in");//geändert in timestamp wann refresh_token abläuft
+      if (refresh_token_expires_in!=-1&&System.currentTimeMillis()<refresh_token_expires_in)
+      {
+        callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.OK, refresh_token_expires_in));
+      }
+      else
+      {
+        AccountManager accountManager = AccountManager.get(cordova.getActivity());
+        accountManager.getAuthToken(acc, TOKEN_TYPE_ID, null, true, new AccountManagerCallback<Bundle>() {
+          @Override
+          public void run(AccountManagerFuture<Bundle> future) {
+            try {
+              Bundle result = future.getResult();
 
-            if (result.keySet().contains(AccountManager.KEY_AUTHTOKEN)) {
+              if (result.keySet().contains(AccountManager.KEY_AUTHTOKEN)) {
 
-              long refresh_token_expires_in = Utils.getNumberFromTokenData(cordova.getActivity(), acc, "refresh_token_expires_in");//geändert in timestamp wann refresh_token abläuft
-              if (refresh_token_expires_in!=-1)
-              {
-                callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.OK, refresh_token_expires_in));
+                  String id_token = result.getString(AccountManager.KEY_AUTHTOKEN);
+
+                  long millis = Utils.getExpFromIDToken(id_token);
+                  callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.OK, millis));
+
+              } else {
+                callbackContext = callbackCtx;
+                runLogin((Intent)result.get(AccountManager.KEY_INTENT),LOGIN_REAUTH);
               }
-              else {
-                String id_token = result.getString(AccountManager.KEY_AUTHTOKEN);
-
-                long millis = Utils.getExpFromIDToken(id_token);
-                callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.OK, millis));
-              }
-            } else {
-              callbackContext = callbackCtx;
-              runLogin((Intent)result.get(AccountManager.KEY_INTENT),LOGIN_REAUTH);
+            } catch (AuthenticatorException e) {
+              Log.e(TAG, e.getMessage());
+              callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
+            } catch (IOException e) {
+              Log.e(TAG, e.getMessage());
+              callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
+            } catch (OperationCanceledException e) {
+              Log.e(TAG, e.getMessage());
+              callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
             }
-          } catch (AuthenticatorException e) {
-            Log.e(TAG, e.getMessage());
-            callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
-          } catch (IOException e) {
-            Log.e(TAG, e.getMessage());
-            callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
-          } catch (OperationCanceledException e) {
-            Log.e(TAG, e.getMessage());
-            callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
           }
-        }
-      }, null);
+        }, null);
+      }
 
     } else {
       callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, "Kein Benutzer angemeldet"));
