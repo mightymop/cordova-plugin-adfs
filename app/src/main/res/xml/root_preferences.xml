@@ -1,11 +1,12 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"  xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <PreferenceCategory app:title="@string/adfs_config">
+    <PreferenceCategory app:title="@string/adfs_config" app:iconSpaceReserved="false">
 
 
         <EditTextPreference
             app:key="@string/client_id_key"
             app:title="@string/client_id"
+            app:iconSpaceReserved="false"
             app:defaultValue="@string/default_client_id_map"
             app:summary="@string/client_id_summary"
             app:useSimpleSummaryProvider="false" />
@@ -13,6 +14,7 @@
         <EditTextPreference
             app:key="@string/redirect_url_key"
             app:title="@string/redirect_url"
+            app:iconSpaceReserved="false"
             app:defaultValue="@string/default_redirect_url"
             app:summary="@string/redirect_url_summary"
             app:useSimpleSummaryProvider="false" />
@@ -20,6 +22,7 @@
         <EditTextPreference
             app:key="@string/user_id_claim_key"
             app:title="@string/user_id_claim"
+            app:iconSpaceReserved="false"
             app:defaultValue="@string/default_user_id_claim"
             app:summary="@string/user_id_claim_summary"
             app:useSimpleSummaryProvider="false" />
@@ -27,6 +30,7 @@
         <EditTextPreference
             app:key="@string/proxy_key"
             app:title="@string/proxy"
+            app:iconSpaceReserved="false"
             app:defaultValue="@string/default_proxy_map"
             app:summary="@string/proxy_summary"
             app:useSimpleSummaryProvider="false" />
@@ -34,6 +38,7 @@
         <EditTextPreference
             app:key="@string/baseurl_key"
             app:title="@string/baseurl"
+            app:iconSpaceReserved="false"
             app:defaultValue="@string/default_baseurl_map"
             app:summary="@string/baseurl_summary"
             app:useSimpleSummaryProvider="false" />
@@ -42,6 +47,7 @@
             app:key="@string/timeout_key"
             app:title="@string/timeout"
             app:defaultValue="@string/default_timeout"
+            app:iconSpaceReserved="false"
             app:summary="@string/timeout_summary"
             app:useSimpleSummaryProvider="false" />
         <!--Preference
@@ -50,22 +56,25 @@
             app:useSimpleSummaryProvider="false"
             android:maxLines="25" /-->
     </PreferenceCategory>
-    <PreferenceCategory app:title="@string/debug">
+    <PreferenceCategory app:title="@string/debug" android:key="debug" app:iconSpaceReserved="false">
         <SwitchPreference
             android:key="@string/toggle_map_key"
             android:title="@string/toggle_map"
             android:defaultValue="false"
+            app:iconSpaceReserved="false"
             android:summaryOn="@string/toggle_map_summary_poldom"
             android:summaryOff="@string/toggle_map_summary_map" />
         <SwitchPreference
             android:key="@string/prompt_key"
             android:title="@string/prompt"
             android:defaultValue="true"
+            app:iconSpaceReserved="false"
             android:summary="@string/prompt_summary"/>
         <SwitchPreference
             android:key="@string/logout_redirect_key"
             android:title="@string/logout_redirect"
             android:defaultValue="true"
+            app:iconSpaceReserved="false"
             android:summary="@string/logout_redirect_summary"/>
         <!--Preference
             app:key="@string/debug_activity_key"

@@ -1,23 +1,9 @@
 package de.berlin.polizei.oidcsso.tasks;
 
 import android.content.Context;
-import android.net.Uri;
-import android.os.AsyncTask;
 import android.util.Log;
 
-import net.openid.appauth.AuthorizationService;
-
 import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.util.UUID;
-
-import javax.net.ssl.HttpsURLConnection;
 
 import de.berlin.polizei.oidcsso.R;
 import de.berlin.polizei.oidcsso.interfaces.TaskResultCallback;

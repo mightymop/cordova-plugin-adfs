@@ -1,30 +1,17 @@
 package de.berlin.polizei.oidcsso.tasks;
 
-import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Bundle;
 import android.util.Log;
-
-import androidx.browser.customtabs.CustomTabsCallback;
-import androidx.browser.customtabs.CustomTabsClient;
-import androidx.browser.customtabs.CustomTabsIntent;
-import androidx.browser.customtabs.CustomTabsServiceConnection;
-import androidx.browser.customtabs.CustomTabsSession;
-
-import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.UUID;
 
 import javax.net.ssl.HttpsURLConnection;
 
 import de.berlin.polizei.oidcsso.R;
-import de.berlin.polizei.oidcsso.interfaces.InitCallback;
 import de.berlin.polizei.oidcsso.interfaces.TaskResultCallback;
 import de.berlin.polizei.oidcsso.utils.Utils;
 

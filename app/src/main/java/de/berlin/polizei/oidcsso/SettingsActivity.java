@@ -39,24 +39,22 @@ import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.preference.EditTextPreference;
 import androidx.preference.Preference;
+import androidx.preference.PreferenceCategory;
 import androidx.preference.PreferenceFragmentCompat;
 
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
 import java.util.List;
 
 import de.berlin.polizei.oidcsso.authenticator.ADFSAuthenticator;
@@ -663,6 +661,15 @@ public class SettingsActivity extends AppCompatActivity {
                     editText.setInputType(InputType.TYPE_CLASS_NUMBER);
                 }
             });
+
+            PreferenceCategory debugCat = findPreference("debug");
+            if (debugCat!=null)
+            {
+                if (!BuildConfig.DEBUG)
+                {
+                    debugCat.setEnabled(false);
+                }
+            }
 
             Preference togglePreference = findPreference(getContext().getString(R.string.toggle_map_key));
             togglePreference.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {

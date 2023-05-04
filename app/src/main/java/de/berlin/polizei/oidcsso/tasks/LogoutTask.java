@@ -1,12 +1,9 @@
 package de.berlin.polizei.oidcsso.tasks;
 
-import static de.berlin.polizei.oidcsso.authenticator.ADFSAuthenticator.TOKEN_DATA;
-
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.Activity;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;

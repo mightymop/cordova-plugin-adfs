@@ -11,17 +11,10 @@ import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URL;
@@ -39,7 +32,6 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 import de.berlin.polizei.oidcsso.R;
-import de.berlin.polizei.oidcsso.tasks.TokenTask;
 
 public class Utils {
 

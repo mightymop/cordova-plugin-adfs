@@ -3,7 +3,6 @@ package de.berlin.polizei.oidcsso.authenticator;
 import static android.accounts.AccountManager.KEY_ACCOUNT_NAME;
 import static android.accounts.AccountManager.KEY_ACCOUNT_TYPE;
 import static android.accounts.AccountManager.KEY_AUTHTOKEN;
-
 import static de.berlin.polizei.oidcsso.OIDCActivity.ACTION_LOGIN;
 import static de.berlin.polizei.oidcsso.OIDCActivity.ACTION_LOGOUT;
 
@@ -37,7 +36,6 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigInteger;
-import java.net.URL;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.RSAPublicKeySpec;

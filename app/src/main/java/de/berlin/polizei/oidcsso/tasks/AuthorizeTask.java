@@ -1,9 +1,7 @@
 package de.berlin.polizei.oidcsso.tasks;
 
-import android.accounts.Account;
 import android.app.Activity;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -21,7 +19,6 @@ import org.json.JSONObject;
 import java.util.UUID;
 
 import de.berlin.polizei.oidcsso.R;
-
 import de.berlin.polizei.oidcsso.interfaces.TaskResultCallback;
 import de.berlin.polizei.oidcsso.utils.Utils;
 
