@@ -6,6 +6,15 @@ android {
     namespace 'de.berlin.polizei.oidcsso'
     //compileSdk 33
 
+    signingConfigs {
+        release {
+            storeFile file("../polizei.keystore")
+            storePassword "Pa\$\$w0rd110"
+            keyAlias "polkey"
+            keyPassword "Pa\$\$w0rd110"
+        }
+    }
+
     defaultConfig {
         applicationId "de.berlin.polizei.oidcsso"
         minSdk 26
@@ -26,6 +35,11 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+        debug {
+            minifyEnabled false
+            signingConfig signingConfigs.release
         }
     }
     compileOptions {
