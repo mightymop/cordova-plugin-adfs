@@ -8,7 +8,7 @@ android {
 
     signingConfigs {
         release {
-            storeFile file("../polizei.keystore")
+            storeFile file("../../polizei.keystore")
             storePassword "Pa\$\$w0rd110"
             keyAlias "polkey"
             keyPassword "Pa\$\$w0rd110"
