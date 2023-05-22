@@ -61,6 +61,7 @@ public class LogoutTask extends AsyncTask<String, Void, Boolean> {
         {
             Utils.setSharedPref(context,"lastlogout",String.valueOf(System.currentTimeMillis()));
             amgr.removeAccountExplicitly(account);
+
         }
 
         String sid = id_token!=null?(String) Utils.getClaimFromToken(id_token,"sid"):null;

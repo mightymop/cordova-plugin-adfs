@@ -37,9 +37,17 @@ public class AuthorizeTask extends AsyncTask<String, Void, Boolean> {
 
     private TaskResultCallback tcb;
 
-    public AuthorizeTask(Activity c, TaskResultCallback cb){
+    private boolean fromNoti;
+
+    public AuthorizeTask(Activity c, boolean noti, TaskResultCallback cb) {
         context=c;
         tcb=cb;
+        fromNoti = noti;
+    }
+
+    @Override
+    protected void onCancelled() {
+        super.onCancelled();
     }
 
     @Override
@@ -68,11 +76,13 @@ public class AuthorizeTask extends AsyncTask<String, Void, Boolean> {
             authorizeUrl=baseUrl+"/oauth2/authorize";
         }
 
+        String redirect_url = redirect_uri.replace("*",context.getPackageName());
+
         authorizeUrl+="?client_id="+client_id;
         authorizeUrl+="&scope=openid%20email%20profile";
         authorizeUrl+="&response_type=code";
         authorizeUrl+="&response_mode=query";
-        authorizeUrl+="&redirect_uri="+redirect_uri.replace("*",context.getPackageName());
+        authorizeUrl+="&redirect_uri="+redirect_url;
         authorizeUrl+="&state="+state;
 
         if (Utils.getSharedPrefBooleanDef(context, context.getString(R.string.prompt_key), true)) {
@@ -87,6 +97,7 @@ public class AuthorizeTask extends AsyncTask<String, Void, Boolean> {
         CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
 
         customTabsIntent = builder.build();
+
         customTabsIntent.intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
         customTabsIntent.intent.addFlags(Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
 
@@ -114,7 +125,6 @@ public class AuthorizeTask extends AsyncTask<String, Void, Boolean> {
                 };
 
                 customTabsClient.warmup(0L);
-
                 session = customTabsClient.newSession(callback);
 
                 session.mayLaunchUrl(uri, null, null);

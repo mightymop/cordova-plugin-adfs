@@ -4,27 +4,20 @@ import static android.accounts.AccountManager.KEY_ACCOUNT_NAME;
 import static android.accounts.AccountManager.KEY_ACCOUNT_TYPE;
 import static android.accounts.AccountManager.KEY_AUTHTOKEN;
 import static de.berlin.polizei.oidcsso.OIDCActivity.ACTION_LOGIN;
-import static de.berlin.polizei.oidcsso.OIDCActivity.ACTION_LOGOUT;
-
 import android.accounts.AbstractAccountAuthenticator;
 import android.accounts.Account;
 import android.accounts.AccountAuthenticatorResponse;
 import android.accounts.AccountManager;
 import android.accounts.NetworkErrorException;
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
-import androidx.core.app.NotificationCompat;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -36,6 +29,8 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigInteger;
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.RSAPublicKeySpec;
@@ -45,6 +40,7 @@ import java.util.concurrent.ExecutionException;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import de.berlin.polizei.oidcsso.BuildConfig;
 import de.berlin.polizei.oidcsso.R;
 import de.berlin.polizei.oidcsso.interfaces.TaskResultCallback;
 import de.berlin.polizei.oidcsso.tasks.LoadconfigTask;
@@ -61,9 +57,7 @@ import io.jsonwebtoken.gson.io.GsonDeserializer;
 
 public class ADFSAuthenticator extends AbstractAccountAuthenticator {
 
-    public static final String CHANNEL_ID = "Abmeldung";
-    public static final String CHANNEL_NAME = "Abmeldung";
-    public static final String CHANNEL_DESCRIPTION = "Abmeldung SSO";
+
     public static final String TOKEN_TYPE_ID = "TOKEN_TYPE_ID";
     public static final String TOKEN_TYPE_ACCESS = "TOKEN_TYPE_ACCESS";
     public static final String TOKEN_TYPE_REFRESH = "TOKEN_TYPE_REFRESH";
@@ -75,77 +69,18 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
     private Context context;
     private AccountManager accountManager;
 
+    private boolean sslInitOK = false;
+
     public ADFSAuthenticator(Context context) {
         super(context);
-        this.context = context;
-        accountManager = AccountManager.get(context);
-        Utils.initSSL();
-        initOIDCServiceConfig();
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    public static void logout(Context context) {
-
-        Intent i = new Intent(ACTION_LOGOUT);
-
-        int NOTIFICATION_ID = 11010;
-
-        PendingIntent pi = null;
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            pi = PendingIntent.getActivity(context, 0,
-                    i
-                    //customTabsIntent.intent
-                    , PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        } else {
-            pi = PendingIntent.getActivity(context, 0,
-                    i
-                    // customTabsIntent.intent
-                    , PendingIntent.FLAG_UPDATE_CURRENT);
+        try {
+            this.context = context;
+            accountManager = AccountManager.get(context);
         }
-
-        // Erstellen der NotificationManager-Instanz
-        NotificationManager notificationManager =
-                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-
-        // Überprüfen, ob das Gerät Android 8.0 oder höher ausführt, da ab Android 8.0 ein Notification-Kanal erforderlich ist
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID,
-                    CHANNEL_NAME,
-                    NotificationManager.IMPORTANCE_HIGH
-            );
-            channel.setDescription(CHANNEL_DESCRIPTION);
-            channel.enableLights(true);
-            channel.setLightColor(Color.RED);
-            notificationManager.createNotificationChannel(channel);
+        catch (Exception e)
+        {
+            Log.e(TAG,e.getMessage(),e);
         }
-
-        // Erstellen der Notification-Instanz mit dem PendingIntent
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setContentTitle(CHANNEL_NAME)
-                .setContentText("Hier klicken zum Abmelden")
-                .setSmallIcon(R.drawable.icon)
-                .setContentIntent(pi)
-                .setPriority(Notification.PRIORITY_HIGH)
-                .setAutoCancel(true);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            // Setzen der Farbe des Notification-Icons für Android 5.0 und höher
-            builder.setColor(Color.RED);
-        }
-
-        Notification notification;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // Setzen der Benachrichtigungssummary für Android 8.0 und höher
-            builder.setGroupSummary(true);
-            notification = builder.build();
-        } else {
-            notification = builder.getNotification();
-        }
-
-        // Anzeigen der Notification
-        notificationManager.notify(NOTIFICATION_ID, notification);
     }
 
     public static String refreshToken(Context context) {
@@ -188,6 +123,7 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
     public Bundle addAccount(AccountAuthenticatorResponse response, String accountType,
                              String authTokenType, String[] requiredFeatures, Bundle options) {
 
+
         Bundle result = new Bundle();
 
         Intent intent = createIntentForAuthorization(response);
@@ -203,7 +139,7 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
         return null;
     }
 
-    /**
+     /**
      * Tries to retrieve a previously stored token of any type. If the token doesn't exist yet or
      * has been invalidated, we need to request a set of replacement tokens.
      */
@@ -211,6 +147,23 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
     public Bundle getAuthToken(AccountAuthenticatorResponse response, Account account,
                                String authTokenType, Bundle options) throws NetworkErrorException {
 
+        if (!sslInitOK) {
+            Utils.initSSL();
+        }
+
+        if (!initOIDCServiceConfig())
+        {
+            Bundle result = new Bundle();
+
+            Intent intent = createIntentForAuthorization(response);
+
+            result.putParcelable(AccountManager.KEY_INTENT, intent);
+
+            return result;
+        }
+
+
+        if (BuildConfig.DEBUG)
         Log.d(TAG, String.format("getAuthToken called with account.type '%s', account.name '%s', " +
                 "authTokenType '%s'.", account.type, account.name, authTokenType));
 
@@ -235,24 +188,30 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
 
         String token = null;
         boolean isofflinetoken = false;
-        boolean isvalid = false;
+        int isvalid = -1;
         Bundle result = null;
         switch (authTokenType) {
             case TOKEN_TYPE_ACCESS:
                 token = access_token;
 
+                if (BuildConfig.DEBUG)
                 Log.d(TAG, "offlineToken = " + String.valueOf(isofflinetoken));
 
                 isvalid = validateToken(context, token);
+                if (BuildConfig.DEBUG)
                 Log.d(TAG, "isvalid = " + String.valueOf(isvalid));
 
                 if (token == null || token.isEmpty() || (expires_in<System.currentTimeMillis())) {
 
                     try {
-
+                        String oldtoken = token;
                         String responseresult = refreshToken(context);
+                        if (responseresult!=null) {
+                            responseresult = Utils.prepareData(responseresult);
+                        }
                         if (responseresult==null)
                         {
+                            Log.e(TAG,"TOKEN_TYPE_ACCESS -------- refreshToken failed ------- result was null >> reauth with login");
                             result = new Bundle();
 
                             Intent intent = createIntentForAuthorization(response);
@@ -262,12 +221,18 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
                             return result;
                         }
                         //responseresult schon in Account gemerged
-                        Log.i(TAG,"merged data: "+responseresult);
+                        if (BuildConfig.DEBUG) {
+                            Log.d(TAG, "merged data: " + responseresult);
+                            Log.d(TAG, "oldtoken: " + oldtoken);
+                        }
 
                         expires_in = Utils.getNumberFromTokenData(context,account,"expires_in");
 
                         //Wenn refresh_token abgelaufen, dann wird die exp nicht geändert...
                         if (expires_in <= System.currentTimeMillis()) {
+                            if (BuildConfig.DEBUG)
+                            Log.e(TAG,"TOKEN_TYPE_ACCESS -------- refreshToken failed, refresh token abgelaufen ------- expires_in <= System.currentTimeMillis() >> reauth with login");
+
                             result = new Bundle();
 
                             Intent intent = createIntentForAuthorization(response);
@@ -290,20 +255,26 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
             case TOKEN_TYPE_ID:
                 token = id_token;
                 isofflinetoken = isOfflineToken(token);
+                if (BuildConfig.DEBUG)
                 Log.d(TAG, "offlineToken = " + String.valueOf(isofflinetoken));
 
                 isvalid = validateToken(context, token);
+                if (BuildConfig.DEBUG)
                 Log.d(TAG, "isvalid = " + String.valueOf(isvalid));
 
-                if (token == null || token.isEmpty() || !isvalid || isofflinetoken) {
+                if (token == null || token.isEmpty() || isvalid==-1 || isofflinetoken) {
 
                     try {
+                        String oldtoken = token;
                         String tresponse = refreshToken(context);
                         if (tresponse!=null) {
                             tresponse = Utils.prepareData(tresponse);
                         }
                         if (tresponse==null)
                         {
+                            if (BuildConfig.DEBUG)
+                            Log.e(TAG,"TOKEN_TYPE_ID -------- refreshToken failed, tresponse is null >> reauth with login");
+
                             result = new Bundle();
 
                             Intent intent = createIntentForAuthorization(response);
@@ -312,21 +283,12 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
 
                             return result;
                         }
-
-                        expires_in = Utils.getNumberFromTokenData(context,account,"expires_in");
-
-                        if (expires_in <= System.currentTimeMillis()) {
-                            result = new Bundle();
-
-                            Intent intent = createIntentForAuthorization(response);
-
-                            result.putParcelable(AccountManager.KEY_INTENT, intent);
-
-                            return result;
-                        } else {
-                            //nach merge den neuen Token zuweisen
-                            token = Utils.getStringFromTokenData(context,account,"id_token");
+                        if (BuildConfig.DEBUG) {
+                            Log.d(TAG, "merged data: " + tresponse);
+                            Log.d(TAG, "oldtoken: " + oldtoken);
                         }
+                        token = Utils.getStringFromTokenData(context,account,"id_token");
+
                     } catch (Exception e) {
                         Log.e(TAG, e.getMessage());
                         if (token != null && !token.isEmpty()) {
@@ -344,6 +306,11 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
             case TOKEN_TYPE_REFRESH:
                 token = refresh_token;
                 if (token == null || token.isEmpty() || refresh_token_expires_in<System.currentTimeMillis()) {
+
+                    if (BuildConfig.DEBUG)
+                    Log.e(TAG,"TOKEN_TYPE_REFRESH -------- token == null || token.isEmpty() || refresh_token_expires_in<System.currentTimeMillis() >> reauth with login");
+
+
                     result = new Bundle();
 
                     Intent intent = createIntentForAuthorization(response);
@@ -359,7 +326,8 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
                 break;
         }
 
-        Log.d(TAG, String.format("Returning token '%s' of type '%s'.", token, authTokenType));
+        if (BuildConfig.DEBUG)
+            Log.d(TAG, String.format("Returning token '%s' of type '%s'.", token, authTokenType));
 
         result = new Bundle();
 
@@ -454,7 +422,7 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
                 JSONObject localKeys = getKeys(ctx);
 
                 if (localKeys == null) {
-                    localKeys = getPublicKeys();
+                    localKeys = Utils.getPublicKeys(ctx);
                     if (localKeys!=null) {
                         saveKeys(ctx, localKeys);
                     }
@@ -472,6 +440,7 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
                     return key;
                 }
 
+                Utils.setSharedPref(context,PUBLIC_TOKEN_KEYS,"");
                 return null;
             }
         } catch (Exception e) {
@@ -504,44 +473,12 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
         return null;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 
-    public JSONObject getPublicKeys() {
-        try {
 
-            JSONObject config = new JSONObject(Utils.getSharedPref(context,context.getString(R.string.configuration_key)));
-            if (config.has("jwks_uri")) {
-
-                HttpsURLConnection con = Utils.getConnection(context, Uri.parse(config.getString("jwks_uri")),"GET",false);
-                con.connect();
-
-                InputStream inputStream = con.getInputStream();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-                StringBuilder result = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    result.append(line);
-                }
-
-                try {
-                    return new JSONObject(result.toString());
-                }
-                finally {
-                    con.disconnect();
-                }
-            }
-
-        } catch (Exception e) {
-            Log.e(TAG, e.getMessage());
-        }
-
-        return null;
-    }
-
-    public boolean validateToken(Context ctx, String token) {
+    public int validateToken(Context ctx, String token) {
         try {
             if (token == null)
-                return false;
+                return -1;
 
             Gson gson = new GsonBuilder().disableHtmlEscaping().create();
 
@@ -583,16 +520,16 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
             // Check the "exp" claim to ensure the token has not expired
             Date expiration = claims.getExpiration();
             if (expiration != null && expiration.before(new Date())) {
-                return false;
+                return -2;
             }
 
             // Check the "nbf" claim to ensure the token is not used before it's valid
             Date notBefore = claims.getNotBefore();
             if (notBefore != null && notBefore.after(new Date())) {
-                return false;
+                return -3;
             }
 
-            return true;
+            return 0;
         } catch (Exception e) {
             Log.e(TAG, e.getMessage());
             if (e instanceof UnsupportedJwtException)
@@ -602,16 +539,16 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
 
                     Date expiration = payload.has("exp")?new Date(payload.getLong("exp")):null;
                     if (expiration != null && expiration.before(new Date())) {
-                        return false;
+                        return -2;
                     }
 
                     // Check the "nbf" claim to ensure the token is not used before it's valid
                     Date notBefore = payload.has("nbf")?new Date(payload.getLong("nbf")):null;
                     if (notBefore != null && notBefore.after(new Date())) {
-                        return false;
+                        return -3;
                     }
 
-                    return true;
+                    return 0;
                 }
                 catch (Exception ex2)
                 {
@@ -619,7 +556,7 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
                 }
             }
             // Token is not valid
-            return false;
+            return -1;
         }
     }
 
@@ -666,7 +603,7 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
         return null;
     }
 
-    private void initOIDCServiceConfig() {
+    private boolean initOIDCServiceConfig() {
         String configJson = Utils.getSharedPref(context, context.getString(R.string.configuration_key));
         if (configJson==null)
         {
@@ -682,7 +619,18 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
                 }
             });
             task.execute();
+            boolean result = false;
+            try {
+                result = task.get(); // wait for the AsyncTask to complete and get the result
+                Log.e(TAG,"RESULT LoadconfigTask: "+String.valueOf((result)));
+            } catch (InterruptedException e) {
+                Log.e(TAG,e.getMessage(),e);
+            } catch (ExecutionException e) {
+                Log.e(TAG,e.getMessage(),e);
+            }
+            return result;
         }
+        return true;
     }
 
 

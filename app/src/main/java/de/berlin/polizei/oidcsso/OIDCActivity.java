@@ -8,10 +8,13 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
 
 import de.berlin.polizei.oidcsso.interfaces.TaskResultCallback;
@@ -34,7 +37,9 @@ public class OIDCActivity extends AppCompatActivity {
     private String state=null;
 
     private boolean isTest;
+    private boolean fromNoti;
 
+    private AuthorizeTask atask;
 
     @Override
     protected void onNewIntent(Intent intent) {
@@ -53,6 +58,26 @@ public class OIDCActivity extends AppCompatActivity {
         context = getApplicationContext();
 
         isTest = getIntent().hasExtra("test")&&getIntent().getBooleanExtra("test",false)==true?true:false;
+        fromNoti = getIntent().hasExtra("noti")&&getIntent().getBooleanExtra("noti",false)==true?true:false;
+
+        if (fromNoti&&getIntent().getCategories()!=null&&getIntent().getCategories().contains(Intent.CATEGORY_DEFAULT))
+        {
+            setContentView(R.layout.activity_main);
+
+            Timer t = new Timer();
+            t.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    Intent intent = new Intent(Intent.ACTION_MAIN);
+                    intent.addCategory(Intent.CATEGORY_HOME);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
+                    finish();
+                }
+            },2500);
+
+            return;
+        }
 
         if (getIntent().getCategories()!=null&&getIntent().getCategories().contains(Intent.CATEGORY_BROWSABLE)&&getIntent().getAction()!=null&&getIntent().getAction().equalsIgnoreCase(Intent.ACTION_VIEW))
         {
@@ -61,14 +86,15 @@ public class OIDCActivity extends AppCompatActivity {
         }
 
         Utils.initSSL();
-        if (Utils.getSharedPref(context,context.getString(R.string.configuration_key))==null) {
+        String configStr = Utils.getSharedPref(context,context.getString(R.string.configuration_key));
+        if (configStr==null) {
             LoadconfigTask task = new LoadconfigTask(this, new TaskResultCallback() {
                 @Override
                 public void onSuccess(String data) {
                     Utils.setSharedPref(context, context.getString(R.string.configuration_key), data);
 
                     if (getIntent().getAction()!=null&&getIntent().getAction().equalsIgnoreCase(ACTION_LOGIN)) {
-                        AuthorizeTask atask = new AuthorizeTask(OIDCActivity.this, new TaskResultCallback() {
+                        atask = new AuthorizeTask(OIDCActivity.this,fromNoti, new TaskResultCallback() {
                             @Override
                             public void onSuccess(String data) {
                                 state = data; //check that the result is from the right request...
@@ -85,6 +111,10 @@ public class OIDCActivity extends AppCompatActivity {
                                     Intent intent = new Intent(context, SettingsActivity.class);
                                     intent.putExtra("result",RESULT_CANCELED);
                                     startActivity(intent);
+                                }
+                                if (fromNoti)
+                                {
+                                   myFinish();
                                 }
                             }
                         });
@@ -106,6 +136,10 @@ public class OIDCActivity extends AppCompatActivity {
                                    intent.putExtra("result",RESULT_OK);
                                    startActivity(intent);
                                 }
+                                if (fromNoti)
+                                {
+                                    myFinish();
+                                }
 
                                 return;
                             } catch (InterruptedException e) {
@@ -122,6 +156,10 @@ public class OIDCActivity extends AppCompatActivity {
                                 intent.putExtra("result",RESULT_CANCELED);
                                 startActivity(intent);
                             }
+                            if (fromNoti)
+                            {
+                                myFinish();
+                            }
                         }
                         else
                         {
@@ -133,10 +171,13 @@ public class OIDCActivity extends AppCompatActivity {
                                 intent.putExtra("result",RESULT_CANCELED);
                                 startActivity(intent);
                             }
+                            if (fromNoti)
+                            {
+                                myFinish();
+                            }
                         }
                     }
                     else {
-
                         setResult(RESULT_CANCELED);
                         finish();
                         if (isTest)
@@ -145,12 +186,23 @@ public class OIDCActivity extends AppCompatActivity {
                             intent.putExtra("result",RESULT_CANCELED);
                             startActivity(intent);
                         }
+                        if (fromNoti)
+                        {
+                            myFinish();
+                        }
                     }
                 }
 
                 @Override
                 public void onError(Exception ex) {
                     Log.e(TAG,ex.getMessage());
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(context,ex.getMessage(),Toast.LENGTH_LONG).show();
+                        }
+                    });
 
                     setResult(RESULT_CANCELED);
                     finish();
@@ -160,6 +212,10 @@ public class OIDCActivity extends AppCompatActivity {
                         intent.putExtra("result",RESULT_CANCELED);
                         startActivity(intent);
                     }
+                    if (fromNoti)
+                    {
+                        myFinish();
+                    }
                 }
             });
             task.execute();
@@ -167,7 +223,7 @@ public class OIDCActivity extends AppCompatActivity {
         else
         {
             if (getIntent().getAction()!=null&&getIntent().getAction().equalsIgnoreCase(ACTION_LOGIN)) {
-                AuthorizeTask atask = new AuthorizeTask(OIDCActivity.this, new TaskResultCallback() {
+                atask = new AuthorizeTask(OIDCActivity.this,fromNoti, new TaskResultCallback() {
 
                     @Override
                     public void onSuccess(String data) {
@@ -186,6 +242,10 @@ public class OIDCActivity extends AppCompatActivity {
                             Intent intent = new Intent(context, SettingsActivity.class);
                             intent.putExtra("result",RESULT_CANCELED);
                             startActivity(intent);
+                        }
+                        if (fromNoti)
+                        {
+                            myFinish();
                         }
                     }
                 });
@@ -207,6 +267,10 @@ public class OIDCActivity extends AppCompatActivity {
                             intent.putExtra("result",RESULT_OK);
                             startActivity(intent);
                         }
+                        if (fromNoti)
+                        {
+                            myFinish();
+                        }
                         return;
                     } catch (InterruptedException e) {
                         Log.e(TAG,e.getMessage(),e);
@@ -221,6 +285,10 @@ public class OIDCActivity extends AppCompatActivity {
                         intent.putExtra("result",RESULT_CANCELED);
                         startActivity(intent);
                     }
+                    if (fromNoti)
+                    {
+                        myFinish();
+                    }
                 }
                 else
                 {
@@ -231,6 +299,10 @@ public class OIDCActivity extends AppCompatActivity {
                         Intent intent = new Intent(context, SettingsActivity.class);
                         intent.putExtra("result",RESULT_CANCELED);
                         startActivity(intent);
+                    }
+                    if (fromNoti)
+                    {
+                        myFinish();
                     }
                 }
             }
@@ -243,8 +315,24 @@ public class OIDCActivity extends AppCompatActivity {
                     intent.putExtra("result",RESULT_CANCELED);
                     startActivity(intent);
                 }
+                if (fromNoti)
+                {
+                   myFinish();
+                }
             }
         }
+    }
+
+    private void myFinish() {
+        Intent i1 = new Intent(getApplicationContext(),OIDCActivity.class);
+        i1.addCategory(Intent.CATEGORY_DEFAULT);
+        i1.putExtra("noti",true);
+        i1.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+        i1.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        i1.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        i1.addFlags(Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
+        i1.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(i1);
     }
 
     private void runRedirect(Intent intent, boolean fromNewIntent)
@@ -303,6 +391,13 @@ public class OIDCActivity extends AppCompatActivity {
                                 if (isTest) {
                                     startActivity(intent);
                                 }
+                                if (fromNoti)
+                                {
+                                    Intent i1 = new Intent(getApplicationContext(),OIDCActivity.class);
+                                    i1.addCategory(Intent.CATEGORY_DEFAULT);
+                                    i1.putExtra("noti",true);
+                                    startActivity(i1);
+                                }
                             }
 
                             @Override
@@ -315,6 +410,13 @@ public class OIDCActivity extends AppCompatActivity {
                                     Intent intent = new Intent(context, SettingsActivity.class);
                                     intent.putExtra("result",RESULT_CANCELED);
                                     startActivity(intent);
+                                }
+                                if (fromNoti)
+                                {
+                                    Intent i1 = new Intent(getApplicationContext(),OIDCActivity.class);
+                                    i1.addCategory(Intent.CATEGORY_DEFAULT);
+                                    i1.putExtra("noti",true);
+                                    startActivity(i1);
                                 }
                             }
                         });

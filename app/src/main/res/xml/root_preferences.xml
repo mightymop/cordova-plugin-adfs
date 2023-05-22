@@ -1,5 +1,9 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"  xmlns:app="http://schemas.android.com/apk/res-auto">
-
+    <Preference
+        app:key="impressum"
+        app:iconSpaceReserved="false"
+        app:summary="@string/impressum_summary"
+        app:title="@string/impressum"/>
     <PreferenceCategory app:title="@string/adfs_config" app:iconSpaceReserved="false">
 
 
@@ -50,11 +54,14 @@
             app:iconSpaceReserved="false"
             app:summary="@string/timeout_summary"
             app:useSimpleSummaryProvider="false" />
-        <!--Preference
-            app:key="@string/configuration_key"
-            app:title="@string/refresh_configuration"
-            app:useSimpleSummaryProvider="false"
-            android:maxLines="25" /-->
+        <SwitchPreference
+            app:key="@string/test_key"
+            app:title="@string/test"
+            app:summary="@string/test_summary"
+            app:iconSpaceReserved="false"
+            android:defaultValue="false"
+            />
+
     </PreferenceCategory>
     <PreferenceCategory app:title="@string/debug" android:key="debug" app:iconSpaceReserved="false">
         <SwitchPreference
@@ -76,10 +83,5 @@
             android:defaultValue="true"
             app:iconSpaceReserved="false"
             android:summary="@string/logout_redirect_summary"/>
-        <!--Preference
-            app:key="@string/debug_activity_key"
-            app:title="@string/debug_activity"
-            app:summary="@string/debug_activity_summary"
-            app:useSimpleSummaryProvider="false"/-->
     </PreferenceCategory>
 </PreferenceScreen>

@@ -52,6 +52,7 @@ public class RefreshTokenTask extends BasePostTask {
 
         requestUrl+="?client_id="+client_id;
         requestUrl+="&refresh_token="+refresh_token;
+        requestUrl+="&scope=openid%20email%20profile";
         requestUrl+="&grant_type=refresh_token";
     }
 

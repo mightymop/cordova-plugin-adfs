@@ -2,7 +2,7 @@ package de.berlin.polizei.oidcsso;
 
 import static de.berlin.polizei.oidcsso.OIDCActivity.ACTION_LOGIN;
 import static de.berlin.polizei.oidcsso.OIDCActivity.ACTION_LOGOUT;
-import static de.berlin.polizei.oidcsso.authenticator.ADFSAuthenticator.CHANNEL_ID;
+
 import static de.berlin.polizei.oidcsso.authenticator.ADFSAuthenticator.TOKEN_TYPE_ACCESS;
 import static de.berlin.polizei.oidcsso.authenticator.ADFSAuthenticator.TOKEN_TYPE_ID;
 import static de.berlin.polizei.oidcsso.authenticator.ADFSAuthenticator.TOKEN_TYPE_REFRESH;
@@ -26,11 +26,13 @@ import android.os.Handler;
 import android.provider.Settings;
 import android.text.InputType;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -75,8 +77,6 @@ public class SettingsActivity extends AppCompatActivity {
     private Button btnTest;
 
     private ActivityResultLauncher<Intent> startForResultLauncher;
-    //private ActivityResultLauncher<Intent> startForResultLauncherLogin;
-   // private ActivityResultLauncher<Intent> startForResultLauncherLogout;
 
     private Context context;
 
@@ -94,12 +94,14 @@ public class SettingsActivity extends AppCompatActivity {
     private boolean activeTest = false;
     private int mInterval = 1000; // Zeitintervall in Millisekunden
 
+    private LinearLayout mDebugLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         context = this;
         setContentView(R.layout.settings_activity);
+        setTitle(getString(R.string.app_name_config));
         window = getWindow();
         mHandlerCountdown = new Handler();
         mTextViewCountdown = (TextView)findViewById(R.id.countdown);
@@ -107,6 +109,12 @@ public class SettingsActivity extends AppCompatActivity {
         mTextViewid = (TextView) findViewById(R.id.testid);
         mTextViewaccess = (TextView)findViewById(R.id.testaccess);
         mTextViewrefresh = (TextView)findViewById(R.id.testrefresh);
+
+        mDebugLayout = (LinearLayout)findViewById(R.id.debug_layout);
+        if (!Utils.getSharedPrefBoolean(this,getString(R.string.test_key)))
+        {
+            mDebugLayout.setVisibility(View.GONE);
+        }
 
         if (savedInstanceState == null)
         {
@@ -147,6 +155,20 @@ public class SettingsActivity extends AppCompatActivity {
         });
     }
 
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == android.R.id.home) {
+            onBackPressed();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    public LinearLayout getDebugLayout(){
+        return mDebugLayout;
+    }
     private void initActivityResult(){
 
         startForResultLauncher = registerForActivityResult(
@@ -524,7 +546,8 @@ public class SettingsActivity extends AppCompatActivity {
     private void initAppAuth(InitCallback callback) {
 
         Utils.initSSL();
-        if (Utils.getSharedPref(context,context.getString(R.string.configuration_key))==null) {
+        String configStr = Utils.getSharedPref(context,context.getString(R.string.configuration_key));
+        if (configStr==null) {
             LoadconfigTask task = new LoadconfigTask(this, new TaskResultCallback() {
                 @Override
                 public void onSuccess(String data) {
@@ -550,7 +573,7 @@ public class SettingsActivity extends AppCompatActivity {
 
         Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
                 .putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName())
-                .putExtra(Settings.EXTRA_CHANNEL_ID, CHANNEL_ID);
+                .putExtra(Settings.EXTRA_CHANNEL_ID, getString(R.string.channel_id));
         Uri uri = Uri.fromParts("package", getPackageName(), null);
         intent.setData(uri);
         //startActivityForResult(intent,NOTICHECK);
@@ -601,8 +624,8 @@ public class SettingsActivity extends AppCompatActivity {
                 public void run() {
 
                     String result = "Aktion nicht erfolgreich";
-
-                    Toast.makeText(context, result, Toast.LENGTH_SHORT).show();
+                    Log.e(TAG,result);
+                    //Toast.makeText(context, result, Toast.LENGTH_SHORT).show();
                 }
             });
         }
@@ -627,6 +650,7 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     public static class SettingsFragment extends PreferenceFragmentCompat {
+
         public void show(Context context, String title, String message, ConfirmDialogListener listener) {
             AlertDialog.Builder builder = new AlertDialog.Builder(context);
             builder.setTitle(title);
@@ -654,6 +678,9 @@ public class SettingsActivity extends AppCompatActivity {
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
             setPreferencesFromResource(R.xml.root_preferences, rootKey);
 
+            Preference impressum =  findPreference("impressum");
+            impressum.setSummary(impressum.getSummary().toString().replace("{VERSION}",BuildConfig.VERSION_NAME));
+
             EditTextPreference myPreference = findPreference(getContext().getString(R.string.timeout_key));
             myPreference.setOnBindEditTextListener(new EditTextPreference.OnBindEditTextListener() {
                 @Override
@@ -665,11 +692,29 @@ public class SettingsActivity extends AppCompatActivity {
             PreferenceCategory debugCat = findPreference("debug");
             if (debugCat!=null)
             {
-                if (!BuildConfig.DEBUG)
+                if (!Utils.getSharedPrefBoolean(getActivity(),getActivity().getString(R.string.test_key)))
                 {
-                    debugCat.setEnabled(false);
+                    debugCat.setVisible(false);
+                    //debugCat.setEnabled(false);
                 }
             }
+
+            Preference testPreference = findPreference(getContext().getString(R.string.test_key));
+            testPreference.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+                @Override
+                public boolean onPreferenceChange(Preference preference, Object newValue) {
+                    if (((Boolean) newValue).booleanValue()) {
+                        ((SettingsActivity)getActivity()).getDebugLayout().setVisibility(View.VISIBLE);
+                        debugCat.setVisible(true);
+                    }
+                    else
+                    {
+                        ((SettingsActivity)getActivity()).getDebugLayout().setVisibility(View.GONE);
+                        debugCat.setVisible(false);
+                    }
+                    return true;
+                }
+            });
 
             Preference togglePreference = findPreference(getContext().getString(R.string.toggle_map_key));
             togglePreference.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {

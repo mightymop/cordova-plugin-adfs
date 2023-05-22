@@ -8,15 +8,23 @@ import android.accounts.AccountManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.Build;
 import android.preference.PreferenceManager;
 import android.util.Log;
+
+import androidx.annotation.RequiresApi;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
@@ -242,6 +250,47 @@ public class Utils {
         }
     }
 
+    public static JSONObject getPublicKeys(Context context) {
+        return getPublicKeys(context,0);
+    }
+    private static JSONObject getPublicKeys(Context context,  int countRetry) {
+        try {
+
+            JSONObject config = new JSONObject(Utils.getSharedPref(context,context.getString(R.string.configuration_key)));
+            if (config.has("jwks_uri")) {
+
+                HttpsURLConnection con = Utils.getConnection(context, Uri.parse(config.getString("jwks_uri")),"GET",false);
+                con.connect();
+
+                InputStream inputStream = con.getInputStream();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+                StringBuilder result = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    result.append(line);
+                }
+
+                try {
+                    countRetry = 0;
+                    return new JSONObject(result.toString());
+                }
+                finally {
+                    con.disconnect();
+                }
+            }
+
+        } catch (Exception e) {
+            if ((e instanceof SocketTimeoutException || e instanceof ConnectException) && countRetry < 5)
+            {
+                countRetry++;
+                return getPublicKeys(context);
+            }
+            Log.e(TAG, e.getMessage());
+        }
+
+        return null;
+    }
+
     public static void createAccount(Context context, String data)
     {
         AccountManager amgr = AccountManager.get(context);
@@ -373,7 +422,7 @@ public class Utils {
 
             // Set up the connection properties
             conn.setRequestMethod(method);
-            int timeout = 20000;
+            int timeout = 5000;
 
             try {
                String strtimeout =  Utils.getSharedPref(context,context.getString(R.string.timeout_key));
@@ -381,11 +430,12 @@ public class Utils {
             }
             catch (Exception e)
             {
-                timeout = 20000;
+                timeout = 5000;
             }
 
             conn.setReadTimeout(timeout /* milliseconds */);
             conn.setConnectTimeout(timeout /* milliseconds */);
+
             conn.setDoInput(true);
             if (method.equalsIgnoreCase("post")) {
                 conn.setDoOutput(true);

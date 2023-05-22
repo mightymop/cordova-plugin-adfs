@@ -1,13 +1,19 @@
 package de.berlin.polizei.oidcsso.tasks;
 
+import static de.berlin.polizei.oidcsso.authenticator.ADFSAuthenticator.PUBLIC_TOKEN_KEYS;
+
 import android.content.Context;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -23,6 +29,8 @@ public class LoadconfigTask extends AsyncTask<String, Void, Boolean> {
     private TaskResultCallback callback;
 
     private Exception ex;
+
+    private int countRetry = 0;
 
     public LoadconfigTask(Context c, TaskResultCallback cb){
         context=c;
@@ -61,11 +69,27 @@ public class LoadconfigTask extends AsyncTask<String, Void, Boolean> {
 
             // Return the result as a string
             this.configJson = result.toString();
+            this.countRetry = 0;
+
+            JSONObject localKeys = Utils.getPublicKeys(context);
+            if (localKeys!=null) {
+                Log.i("LoadconfigTask","PUBLIC KEYS GELADEN!!!");
+                Utils.setSharedPref(context,PUBLIC_TOKEN_KEYS,localKeys.toString());
+            }
+            else {
+                Log.e("LoadconfigTask","COULD NOT GET PUBLIC KEYS!!!");
+            }
 
             return true;
         }
         catch (Exception e)
         {
+            if ((e instanceof SocketTimeoutException || e instanceof ConnectException) && countRetry < 5)
+            {
+                countRetry++;
+                return run( configUrl,  withProxy);
+            }
+
             this.configJson = null;
             this.ex=e;
             Log.e(LoadconfigTask.class.getSimpleName(),e.getMessage(),e);

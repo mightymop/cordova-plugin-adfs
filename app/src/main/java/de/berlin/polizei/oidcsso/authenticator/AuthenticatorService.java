@@ -14,8 +14,15 @@ public class AuthenticatorService extends Service {
     public IBinder onBind(Intent intent) {
         Log.d(TAG, "Binding Authenticator.");
 
-        ADFSAuthenticator authenticator = new ADFSAuthenticator(this);
-        return authenticator.getIBinder();
+        try {
+            ADFSAuthenticator authenticator = new ADFSAuthenticator(this);
+            return authenticator.getIBinder();
+        }
+        catch (Exception e)
+        {
+            Log.e("ADFSAuthenticatorService",e.getMessage(),e);
+            return null;
+        }
     }
 
 }

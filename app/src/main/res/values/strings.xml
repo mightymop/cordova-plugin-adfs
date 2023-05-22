@@ -1,7 +1,7 @@
 <resources>
-    <string name="app_name">OIDC SSO</string>
+    <string name="app_name">An-/Abmeldung</string>
 
-    <string name="app_name_config">BasisPol</string>
+    <string name="app_name_config">Einstellungen</string>
     <string name="account_type">SSO</string><!-- has to be equal to cordova plugin static variable-->
     <string name="account_type_user_label">SSO Konto</string>
 
@@ -19,11 +19,16 @@
     <string name="debug_activity_key">debug_activity_key</string>
     <string name="logout_redirect_key">logout_redirect_key</string>
     <string name="timeout_key">timeout_key</string>
+    <string name="test_key">test</string>
+    <string name="allow_exp_idtoken_key">allow_exp_idtoken</string>
 
     <string name="adfs_config">ADFS Konfiguration</string>
 
     <string name="logout_redirect">Logout Redirect</string>
     <string name="logout_redirect_summary">Redirect zurück zur App nach Logout.</string>
+
+    <!--string name="allow_exp_idtoken">Abgelaufene ID_TOKEN</string>
+    <string name="allow_exp_idtoken_summary">Erlaubt die Verwendung abgelaufener ID_TOKEN.</string-->
 
     <string name="client_id">Client ID</string>
     <string name="client_id_summary">Wird vom ADFS Admin ausgegeben.</string>
@@ -52,6 +57,9 @@
     <string name="configuration">Konfiguration-JSON</string>
     <string name="refresh_configuration">Konfigurations-JSON aktualisieren</string>
 
+    <string name="test">Testmodus</string>
+    <string name="test_summary">Gedrückt halten, um Testmodus zu aktivieren.</string>
+
     <string name="toggle_map">Defaultwerte MAP/Poldom</string>
     <string name="toggle_map_summary_poldom">Defaultwerte (Client_id, Proxy und Baseurl), Aktiv: Poldom</string>
     <string name="toggle_map_summary_map">Defaultwerte (Client_id, Proxy und Baseurl), Aktiv: MAP</string>
@@ -61,4 +69,13 @@
     <string name="confirm_poldom">Sollen die Standardwerte für POLDOM gesetzt werden?</string>
 
     <string name="debug">Debug</string>
+
+    <string name="confirmed_login">Sie sind angemeldet.</string>
+
+    <string name="channel_desc">Bietet die Möglichkeit sich zentral an- oder abzumelden.</string>
+    <string name="channel_name">An-/Abmeldung</string>
+    <string name="channel_id">An-/Abmeldung</string>
+
+    <string name="impressum">An-/Abmeldung</string>
+    <string name="impressum_summary">Polizei Berlin\nDir ZS IKT PG MIKT\nPlatz der Luftbrücke 6\n12101 Berlin\n\nVersion: {VERSION}</string>
 </resources>

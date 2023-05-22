@@ -11,6 +11,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.net.ConnectException;
+import java.net.InetAddress;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -25,6 +29,8 @@ public class BasePostTask extends AsyncTask<String, Void, String> {
 
     protected Exception ex;
 
+    private int countRetry = 0;
+
     public BasePostTask(Context c){
         context=c;
     }
@@ -34,11 +40,19 @@ public class BasePostTask extends AsyncTask<String, Void, String> {
         return ex;
     }
 
-    private String run(boolean withoutproxy)
+    private String run(boolean withoutproxy,boolean useip)
     {
         try
         {
-            HttpsURLConnection connection = Utils.getConnection(context,Uri.parse(requestUrl),"POST",withoutproxy);
+            String url = requestUrl;
+            Uri requestUri = Uri.parse(requestUrl);
+            if (useip) {
+                String ip = resolveHost(requestUri);
+                if (ip!=null) {
+                    url = url.replace(requestUri.getHost(), ip);
+                }
+            }
+            HttpsURLConnection connection = Utils.getConnection(context,useip ? Uri.parse(url) : requestUri,"POST",withoutproxy);
 
             connection.addRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
@@ -63,9 +77,11 @@ public class BasePostTask extends AsyncTask<String, Void, String> {
                     }
                     reader.close();
                     resultJson = result.toString();
+                    this.countRetry = 0;
                     return resultJson;
                 } else {
                     Log.e(TokenTask.class.getSimpleName(), connection.getResponseMessage() + ": " + String.valueOf(respCode));
+                    this.countRetry = 0;
                     return null;
                 }
             }
@@ -78,16 +94,41 @@ public class BasePostTask extends AsyncTask<String, Void, String> {
         {
             Log.e(BasePostTask.class.getSimpleName(),e.getMessage(),e);
 
+            if ((e instanceof SocketTimeoutException || e instanceof ConnectException) && countRetry < 5)
+            {
+                countRetry++;
+                return run(withoutproxy, withoutproxy);
+            }
+
             if (!withoutproxy)
             {
-                return run(true);
+                return run(true, e instanceof UnknownHostException ? true : false);
             }
+            return null;
+        }
+    }
+
+    private String resolveHost(Uri uri)
+    {
+        try {
+            InetAddress[] addresses = InetAddress.getAllByName(uri.getHost());
+
+            for (InetAddress address : addresses) {
+                System.out.println("Host: " + uri.getHost());
+                System.out.println("IP Address: " + address.getHostAddress());
+                System.out.println("Canonical Hostname: " + address.getCanonicalHostName());
+                System.out.println();
+                return address.getHostAddress();
+            }
+            return null;
+        } catch (UnknownHostException e) {
+            Log.e("BasePostTask",e.getMessage(),e);
             return null;
         }
     }
 
     @Override
     protected String doInBackground(String... args) {
-        return run(false);
+        return run(false,false);
     }
 }
