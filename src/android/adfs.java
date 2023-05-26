@@ -87,7 +87,12 @@ public class adfs extends CordovaPlugin {
               } else {
                 Intent i = (Intent) result.get(AccountManager.KEY_INTENT);
                 callbackContext = callbackCtx;
-                runLogin(i,LOGIN_REAUTH);
+                String resstart = runLogin(i,LOGIN_REAUTH);
+                if (resstart!=null)
+                {
+                  callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, resstart));
+                  return;
+                }
               }
             } catch (AuthenticatorException e) {
               Log.e(TAG, e.getMessage());
@@ -222,7 +227,12 @@ public class adfs extends CordovaPlugin {
 
               } else {
                 callbackContext = callbackCtx;
-                runLogin((Intent)result.get(AccountManager.KEY_INTENT),LOGIN_REAUTH);
+                String resstart =  runLogin((Intent)result.get(AccountManager.KEY_INTENT),LOGIN_REAUTH);
+                if (resstart!=null)
+                {
+                  callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, resstart));
+                  return;
+                }
               }
             } catch (AuthenticatorException e) {
               Log.e(TAG, e.getMessage());
@@ -243,12 +253,19 @@ public class adfs extends CordovaPlugin {
     }
   }
 
-  private void runLogin(Intent i, int requestCode)
+  private String runLogin(Intent i, int requestCode)
   {
     //i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     //cordova.setActivityResultCallback(adfs.this);
     isInAuthProcess=true;
-    cordova.startActivityForResult(adfs.this, i, requestCode);
+    try {
+      cordova.startActivityForResult(adfs.this, i, requestCode);
+      return null;
+    }
+    catch (Exception e)
+    {
+      return e.getMessage();
+    }
   }
 
   private void checklogin(CallbackContext callbackContext) {
@@ -263,26 +280,31 @@ public class adfs extends CordovaPlugin {
   private void login(CallbackContext callbackContext) {
     this.callbackContext = callbackContext;
 
-    try {
       Intent i = Utils.getLoginIntent();
-      runLogin(i,LOGIN_RES);
-    } catch (Exception e) {
-      Log.e(TAG, e.getMessage());
-      cordova.getActivity().runOnUiThread(new Runnable() {
-        @Override
-        public void run() {
-          Toast.makeText(cordova.getActivity(), e.getMessage(), Toast.LENGTH_LONG).show();
-          System.exit(1);
-        }
-      });
-    }
+      final String resstart =  runLogin(i,LOGIN_RES);
+      if (resstart!=null)
+      {
+        cordova.getActivity().runOnUiThread(new Runnable() {
+          @Override
+          public void run() {
+            Toast.makeText(cordova.getActivity(), resstart, Toast.LENGTH_LONG).show();
+          }
+        });
+        callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, resstart));
+      }
   }
 
   private void logout(CallbackContext callbackContext) {
     Account acc = Utils.getCurrentUser(cordova.getActivity());
     if (acc != null) {
       Intent i = Utils.getLogoutIntent();
-      runLogin(i,LOGOUT_RES);
+
+      String resstart =  runLogin(i,LOGOUT_RES);
+      if (resstart!=null)
+      {
+        callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, resstart));
+        return;
+      }
 
       callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, acc.name));
     } else {
