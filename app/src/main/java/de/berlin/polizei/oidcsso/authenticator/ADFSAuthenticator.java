@@ -4,6 +4,7 @@ import static android.accounts.AccountManager.KEY_ACCOUNT_NAME;
 import static android.accounts.AccountManager.KEY_ACCOUNT_TYPE;
 import static android.accounts.AccountManager.KEY_AUTHTOKEN;
 import static de.berlin.polizei.oidcsso.OIDCActivity.ACTION_LOGIN;
+
 import android.accounts.AbstractAccountAuthenticator;
 import android.accounts.Account;
 import android.accounts.AccountAuthenticatorResponse;
@@ -11,13 +12,9 @@ import android.accounts.AccountManager;
 import android.accounts.NetworkErrorException;
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.Toast;
-
-import androidx.annotation.RequiresApi;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -25,12 +22,7 @@ import com.google.gson.GsonBuilder;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.math.BigInteger;
-import java.net.ConnectException;
-import java.net.SocketTimeoutException;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.RSAPublicKeySpec;
@@ -38,9 +30,6 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.concurrent.ExecutionException;
 
-import javax.net.ssl.HttpsURLConnection;
-
-import de.berlin.polizei.oidcsso.BuildConfig;
 import de.berlin.polizei.oidcsso.R;
 import de.berlin.polizei.oidcsso.interfaces.TaskResultCallback;
 import de.berlin.polizei.oidcsso.tasks.LoadconfigTask;
@@ -163,7 +152,7 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
         }
 
 
-        if (BuildConfig.DEBUG)
+        //if (BuildConfig.DEBUG)
         Log.d(TAG, String.format("getAuthToken called with account.type '%s', account.name '%s', " +
                 "authTokenType '%s'.", account.type, account.name, authTokenType));
 
@@ -194,11 +183,11 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
             case TOKEN_TYPE_ACCESS:
                 token = access_token;
 
-                if (BuildConfig.DEBUG)
+                //if (BuildConfig.DEBUG)
                 Log.d(TAG, "offlineToken = " + String.valueOf(isofflinetoken));
 
                 isvalid = validateToken(context, token);
-                if (BuildConfig.DEBUG)
+                // if (BuildConfig.DEBUG)
                 Log.d(TAG, "isvalid = " + String.valueOf(isvalid));
 
                 if (token == null || token.isEmpty() || (expires_in<System.currentTimeMillis())) {
@@ -221,7 +210,8 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
                             return result;
                         }
                         //responseresult schon in Account gemerged
-                        if (BuildConfig.DEBUG) {
+                        // if (BuildConfig.DEBUG)
+                        {
                             Log.d(TAG, "merged data: " + responseresult);
                             Log.d(TAG, "oldtoken: " + oldtoken);
                         }
@@ -230,7 +220,7 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
 
                         //Wenn refresh_token abgelaufen, dann wird die exp nicht geändert...
                         if (expires_in <= System.currentTimeMillis()) {
-                            if (BuildConfig.DEBUG)
+                            //if (BuildConfig.DEBUG)
                             Log.e(TAG,"TOKEN_TYPE_ACCESS -------- refreshToken failed, refresh token abgelaufen ------- expires_in <= System.currentTimeMillis() >> reauth with login");
 
                             result = new Bundle();
@@ -255,11 +245,11 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
             case TOKEN_TYPE_ID:
                 token = id_token;
                 isofflinetoken = isOfflineToken(token);
-                if (BuildConfig.DEBUG)
+                // if (BuildConfig.DEBUG)
                 Log.d(TAG, "offlineToken = " + String.valueOf(isofflinetoken));
 
                 isvalid = validateToken(context, token);
-                if (BuildConfig.DEBUG)
+                //if (BuildConfig.DEBUG)
                 Log.d(TAG, "isvalid = " + String.valueOf(isvalid));
 
                 if (token == null || token.isEmpty() || isvalid==-1 || isofflinetoken) {
@@ -272,7 +262,7 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
                         }
                         if (tresponse==null)
                         {
-                            if (BuildConfig.DEBUG)
+                            // if (BuildConfig.DEBUG)
                             Log.e(TAG,"TOKEN_TYPE_ID -------- refreshToken failed, tresponse is null >> reauth with login");
 
                             result = new Bundle();
@@ -283,7 +273,8 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
 
                             return result;
                         }
-                        if (BuildConfig.DEBUG) {
+                        // if (BuildConfig.DEBUG)
+                        {
                             Log.d(TAG, "merged data: " + tresponse);
                             Log.d(TAG, "oldtoken: " + oldtoken);
                         }
@@ -307,7 +298,7 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
                 token = refresh_token;
                 if (token == null || token.isEmpty() || refresh_token_expires_in<System.currentTimeMillis()) {
 
-                    if (BuildConfig.DEBUG)
+                    // if (BuildConfig.DEBUG)
                     Log.e(TAG,"TOKEN_TYPE_REFRESH -------- token == null || token.isEmpty() || refresh_token_expires_in<System.currentTimeMillis() >> reauth with login");
 
 
@@ -326,7 +317,7 @@ public class ADFSAuthenticator extends AbstractAccountAuthenticator {
                 break;
         }
 
-        if (BuildConfig.DEBUG)
+        //  if (BuildConfig.DEBUG)
             Log.d(TAG, String.format("Returning token '%s' of type '%s'.", token, authTokenType));
 
         result = new Bundle();

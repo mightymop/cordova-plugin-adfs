@@ -2,7 +2,6 @@ package de.berlin.polizei.oidcsso;
 
 import static de.berlin.polizei.oidcsso.OIDCActivity.ACTION_LOGIN;
 import static de.berlin.polizei.oidcsso.OIDCActivity.ACTION_LOGOUT;
-
 import static de.berlin.polizei.oidcsso.authenticator.ADFSAuthenticator.TOKEN_TYPE_ACCESS;
 import static de.berlin.polizei.oidcsso.authenticator.ADFSAuthenticator.TOKEN_TYPE_ID;
 import static de.berlin.polizei.oidcsso.authenticator.ADFSAuthenticator.TOKEN_TYPE_REFRESH;
