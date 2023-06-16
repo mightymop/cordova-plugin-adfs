@@ -5,7 +5,9 @@ import android.accounts.AccountManager;
 import android.accounts.AccountManagerCallback;
 import android.accounts.AccountManagerFuture;
 import android.accounts.AuthenticatorException;
+import android.accounts.OnAccountsUpdateListener;
 import android.accounts.OperationCanceledException;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -40,6 +42,37 @@ public class adfs extends CordovaPlugin {
 
   private JSONObject request;
   private CallbackContext callbackContext;
+
+  private CallbackContext onAccountEventCallbackContext = null;
+
+  private OnAccountsUpdateListener listener;
+
+  private void initAccountListener(Context ctx) {
+
+    Log.d(TAG,"initAccountListener");
+    if (listener==null) {
+      listener = new OnAccountsUpdateListener() {
+        @Override
+        public void onAccountsUpdated(Account[] accounts) {
+          if (onAccountEventCallbackContext != null) {
+
+            PluginResult result = null;
+            if (Utils.getCurrentUser(cordova.getActivity()) != null) {
+              result = new PluginResult(PluginResult.Status.OK, true);
+
+            } else {
+              result = new PluginResult(PluginResult.Status.OK, false);
+            }
+
+            result.setKeepCallback(true);
+            onAccountEventCallbackContext.sendPluginResult(result);
+          }
+        }
+      };
+      AccountManager amgr = AccountManager.get(ctx);
+      amgr.addOnAccountsUpdatedListener(listener, null, true, null);
+    }
+  }
 
   private void getToken(CallbackContext callbackCtx, String authTokenType) {
     getToken(callbackCtx, Utils.getCurrentUser(cordova.getActivity()), authTokenType);
@@ -312,6 +345,16 @@ public class adfs extends CordovaPlugin {
     }
   }
 
+  public boolean setAuthEvent(final CallbackContext context) {
+
+    this.onAccountEventCallbackContext = context;
+    initAccountListener(cordova.getActivity());
+    PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
+    result.setKeepCallback(true);
+    context.sendPluginResult(result);
+    return true;
+  }
+
   @Override
   public boolean execute(@NonNull final String action, final JSONArray data, final CallbackContext callbackContext) {
 
@@ -356,6 +399,10 @@ public class adfs extends CordovaPlugin {
 
           case "getRefreshTokenExpTime":
             getRefreshTokenExpTime(callbackContext);
+            break;
+
+          case "setAuthEvent":
+            setAuthEvent(callbackContext);
             break;
         }
       }

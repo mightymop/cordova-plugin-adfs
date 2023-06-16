@@ -23,6 +23,9 @@ var adfs = {
 	},
 	getRefreshTokenExpTime: function (success, error) {
 		exec(success, error, PLUGIN_NAME, 'getRefreshTokenExpTime', []);
+	},
+	setAuthEvent: function (success, error) {
+		exec(success, error, PLUGIN_NAME, 'setAuthEvent', []);
 	}
 
 };
