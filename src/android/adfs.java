@@ -5,9 +5,7 @@ import android.accounts.AccountManager;
 import android.accounts.AccountManagerCallback;
 import android.accounts.AccountManagerFuture;
 import android.accounts.AuthenticatorException;
-import android.accounts.OnAccountsUpdateListener;
 import android.accounts.OperationCanceledException;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -31,7 +29,6 @@ public class adfs extends CordovaPlugin {
   public static final String TOKEN_TYPE_ID = "TOKEN_TYPE_ID";
   public static final String TOKEN_TYPE_ACCESS = "TOKEN_TYPE_ACCESS";
   public static final String TOKEN_TYPE_REFRESH = "TOKEN_TYPE_REFRESH";
-  public static final String REFRESH_TOKEN_EXP = "refresh_token_expires_in";
   private final static String TAG = "ADFS_PLUGIN";
 
   private final static int LOGOUT_RES = 100;
@@ -43,36 +40,11 @@ public class adfs extends CordovaPlugin {
   private JSONObject request;
   private CallbackContext callbackContext;
 
-  private CallbackContext onAccountEventCallbackContext = null;
-
-  private OnAccountsUpdateListener listener;
-
-  private void initAccountListener(Context ctx) {
-
-    Log.d(TAG,"initAccountListener");
-    if (listener==null) {
-      listener = new OnAccountsUpdateListener() {
-        @Override
-        public void onAccountsUpdated(Account[] accounts) {
-          if (onAccountEventCallbackContext != null) {
-
-            PluginResult result = null;
-            if (Utils.getCurrentUser(cordova.getActivity()) != null) {
-              result = new PluginResult(PluginResult.Status.OK, true);
-
-            } else {
-              result = new PluginResult(PluginResult.Status.OK, false);
-            }
-
-            result.setKeepCallback(true);
-            onAccountEventCallbackContext.sendPluginResult(result);
-          }
-        }
-      };
-      AccountManager amgr = AccountManager.get(ctx);
-      amgr.addOnAccountsUpdatedListener(listener, null, true, null);
-    }
-  }
+  private int currentAction = 0;
+  private static int MASK_RELOGIN = 1;
+  private static int MASK_ACCESS_TOKEN = 2;
+  private static int MASK_ID_TOKEN = 4;
+  private static int MASK_REFRESH_TOKEN = 8;
 
   private void getToken(CallbackContext callbackCtx, String authTokenType) {
     getToken(callbackCtx, Utils.getCurrentUser(cordova.getActivity()), authTokenType);
@@ -118,6 +90,7 @@ public class adfs extends CordovaPlugin {
               if (result.keySet().contains(AccountManager.KEY_AUTHTOKEN)) {
                 callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.OK, result.getString(AccountManager.KEY_AUTHTOKEN)));
               } else {
+                currentAction |=MASK_RELOGIN;
                 Intent i = (Intent) result.get(AccountManager.KEY_INTENT);
                 callbackContext = callbackCtx;
                 String resstart = runLogin(i,LOGIN_REAUTH);
@@ -152,14 +125,20 @@ public class adfs extends CordovaPlugin {
   }
 
   private void getAccessToken(CallbackContext callbackContext) {
+    currentAction = 0;
+    currentAction |= MASK_ACCESS_TOKEN;
     getToken(callbackContext, TOKEN_TYPE_ACCESS);
   }
 
   private void getIDToken(CallbackContext callbackContext) {
+    currentAction = 0;
+    currentAction |= MASK_ID_TOKEN;
     getToken(callbackContext, TOKEN_TYPE_ID);
   }
 
   private void getRefreshToken(CallbackContext callbackContext) {
+    currentAction = 0;
+    currentAction |= MASK_REFRESH_TOKEN;
     getToken(callbackContext, TOKEN_TYPE_REFRESH);
   }
 
@@ -173,9 +152,28 @@ public class adfs extends CordovaPlugin {
         Log.d(TAG,"onActivityResult LOGIN_REAUTH OK");
         JSONObject result = new JSONObject();
         try {
-          result.put("id_token", data.getExtras().getString("id_token"));
-          result.put("access_token", data.getExtras().getString("access_token"));
-          result.put("refresh_token", data.getExtras().getString("refresh_token"));
+          if ((currentAction&MASK_RELOGIN)==MASK_RELOGIN)
+          {
+            if ((currentAction&MASK_ACCESS_TOKEN)==MASK_ACCESS_TOKEN)
+            {
+              result.put("access_token", data.getExtras().getString("access_token"));
+            }
+            else
+            if ((currentAction&MASK_ID_TOKEN)==MASK_ID_TOKEN)
+            {
+              result.put("id_token", data.getExtras().getString("id_token"));
+            }
+            else
+            if ((currentAction&MASK_REFRESH_TOKEN)==MASK_REFRESH_TOKEN)
+            {
+              result.put("refresh_token", data.getExtras().getString("refresh_token"));
+            }
+          }
+          else {
+            result.put("id_token", data.getExtras().getString("id_token"));
+            result.put("access_token", data.getExtras().getString("access_token"));
+            result.put("refresh_token", data.getExtras().getString("refresh_token"));
+          }
           callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, result));
         } catch (JSONException e) {
           callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
@@ -196,9 +194,28 @@ public class adfs extends CordovaPlugin {
         Log.d(TAG,"onActivityResult LOGIN_RES OK");
         JSONObject result = new JSONObject();
         try {
-          result.put("id_token", data.getExtras().getString("id_token"));
-          result.put("access_token", data.getExtras().getString("access_token"));
-          result.put("refresh_token", data.getExtras().getString("refresh_token"));
+          if ((currentAction&MASK_RELOGIN)==MASK_RELOGIN)
+          {
+            if ((currentAction&MASK_ACCESS_TOKEN)==MASK_ACCESS_TOKEN)
+            {
+              result.put("access_token", data.getExtras().getString("access_token"));
+            }
+            else
+            if ((currentAction&MASK_ID_TOKEN)==MASK_ID_TOKEN)
+            {
+              result.put("id_token", data.getExtras().getString("id_token"));
+            }
+            else
+            if ((currentAction&MASK_REFRESH_TOKEN)==MASK_REFRESH_TOKEN)
+            {
+              result.put("refresh_token", data.getExtras().getString("refresh_token"));
+            }
+          }
+          else {
+            result.put("id_token", data.getExtras().getString("id_token"));
+            result.put("access_token", data.getExtras().getString("access_token"));
+            result.put("refresh_token", data.getExtras().getString("refresh_token"));
+          }
           callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, result));
         } catch (JSONException e) {
           callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, e.getMessage()));
@@ -345,16 +362,6 @@ public class adfs extends CordovaPlugin {
     }
   }
 
-  public boolean setAuthEvent(final CallbackContext context) {
-
-    this.onAccountEventCallbackContext = context;
-    initAccountListener(cordova.getActivity());
-    PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
-    result.setKeepCallback(true);
-    context.sendPluginResult(result);
-    return true;
-  }
-
   @Override
   public boolean execute(@NonNull final String action, final JSONArray data, final CallbackContext callbackContext) {
 
@@ -399,10 +406,6 @@ public class adfs extends CordovaPlugin {
 
           case "getRefreshTokenExpTime":
             getRefreshTokenExpTime(callbackContext);
-            break;
-
-          case "setAuthEvent":
-            setAuthEvent(callbackContext);
             break;
         }
       }
