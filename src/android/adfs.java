@@ -159,23 +159,23 @@ public class adfs extends CordovaPlugin {
           {
             if ((currentAction&MASK_ACCESS_TOKEN)==MASK_ACCESS_TOKEN)
             {
-              result.put("access_token", data.getExtras().getString("access_token"));
+              result.put("access_token", getTokenFromIntent(data,"access_token"));
             }
             else
             if ((currentAction&MASK_ID_TOKEN)==MASK_ID_TOKEN)
             {
-              result.put("id_token", data.getExtras().getString("id_token"));
+              result.put("id_token", getTokenFromIntent(data,"id_token"));
             }
             else
             if ((currentAction&MASK_REFRESH_TOKEN)==MASK_REFRESH_TOKEN)
             {
-              result.put("refresh_token", data.getExtras().getString("refresh_token"));
+              result.put("refresh_token", getTokenFromIntent(data,"refresh_token"));
             }
           }
           else {
-            result.put("id_token", data.getExtras().getString("id_token"));
-            result.put("access_token", data.getExtras().getString("access_token"));
-            result.put("refresh_token", data.getExtras().getString("refresh_token"));
+            result.put("id_token", getTokenFromIntent(data,"id_token"));
+            result.put("access_token",  getTokenFromIntent(data,"access_token"));
+            result.put("refresh_token", getTokenFromIntent(data,"refresh_token"));
           }
           callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, result));
         } catch (JSONException e) {
@@ -201,23 +201,23 @@ public class adfs extends CordovaPlugin {
           {
             if ((currentAction&MASK_ACCESS_TOKEN)==MASK_ACCESS_TOKEN)
             {
-              result.put("access_token", data.getExtras().getString("access_token"));
+              result.put("access_token", getTokenFromIntent(data,"access_token"));
             }
             else
             if ((currentAction&MASK_ID_TOKEN)==MASK_ID_TOKEN)
             {
-              result.put("id_token", data.getExtras().getString("id_token"));
+              result.put("id_token", getTokenFromIntent(data,"id_token"));
             }
             else
             if ((currentAction&MASK_REFRESH_TOKEN)==MASK_REFRESH_TOKEN)
             {
-              result.put("refresh_token", data.getExtras().getString("refresh_token"));
+              result.put("refresh_token", getTokenFromIntent(data,"refresh_token"));
             }
           }
           else {
-            result.put("id_token", data.getExtras().getString("id_token"));
-            result.put("access_token", data.getExtras().getString("access_token"));
-            result.put("refresh_token", data.getExtras().getString("refresh_token"));
+            result.put("id_token", getTokenFromIntent(data,"id_token"));
+            result.put("access_token",  getTokenFromIntent(data,"access_token"));
+            result.put("refresh_token", getTokenFromIntent(data,"refresh_token"));
           }
           callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, result));
         } catch (JSONException e) {
@@ -226,9 +226,6 @@ public class adfs extends CordovaPlugin {
       } else {
         Log.d(TAG,"onActivityResult LOGIN_RES ERROR");
         Log.e(TAG, "RESULTCODE 1=" + String.valueOf(resultCode));
-        Log.e(TAG, data != null ? "DATA!=NULL" : "DATA=NULL");
-        Log.e(TAG, data != null && data.hasExtra("access_token") ? data.getExtras().getString("access_token") : "access_token=NULL");
-        Log.e(TAG, data != null && data.hasExtra("error") ? data.getExtras().getString("error") : "ERROR=NULL");
         callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, data != null && data.getExtras() != null && data.hasExtra("error") ? data.getStringExtra("error") : "Fehler beim Login (2)."));
 
         // Log.d(TAG,"onActivityResult LOGIN_RES EXIT APP");
@@ -239,6 +236,36 @@ public class adfs extends CordovaPlugin {
     }
 
     Log.d(TAG,"onActivityResult ???");
+  }
+
+  private String getTokenFromIntent(Intent intent, String tokenname)
+  {
+    if (intent.hasExtra(tokenname))
+    {
+      return intent.getExtras().getString(tokenname);
+    }
+    else
+    if (intent.hasExtra("state"))
+    {
+       String state = intent.getExtras().getString("state");
+       try {
+         JSONObject jsonstate = new JSONObject(state);
+         JSONObject mLastTokenResponse = jsonstate.getJSONObject("mLastTokenResponse");
+         String result = mLastTokenResponse.has(tokenname)?mLastTokenResponse.getString(tokenname):null;
+         if (result==null&&tokenname.equalsIgnoreCase("refreshToken")) //hier refreshToken!! nicht refresh_token, im mLastTokenResponse heißt es refresh_token
+         {
+           return jsonstate.has(tokenname)?jsonstate.getString(tokenname):null;
+         }
+         else
+           return result;
+       }
+       catch (Exception e)
+       {
+         return null;
+       }
+    }
+    else
+      return null;
   }
 
   private void getRefreshTokenExpTime(CallbackContext callbackCtx) {
@@ -301,7 +328,8 @@ public class adfs extends CordovaPlugin {
   {
     cordova.setActivityResultCallback(adfs.this);
     isInAuthProcess=true;
-      i.putExtra("callbackurl",cordova.getActivity().getPackageName()+".redirect");
+   //   i.putExtra("callbackurl",cordova.getActivity().getPackageName()+".redirect");
+   //   i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     try {
       cordova.getActivity().startActivityForResult(i,requestCode);
       //cordova.startActivityForResult(adfs.this, i, requestCode);
