@@ -93,9 +93,6 @@ public class adfs extends CordovaPlugin {
                 currentAction |=MASK_RELOGIN;
                 Intent i = (Intent) result.get(AccountManager.KEY_INTENT);
                 callbackContext = callbackCtx;
-                PluginResult r = new PluginResult(PluginResult.Status.NO_RESULT);
-                r.setKeepCallback(true);
-                callbackContext.sendPluginResult(r);
                 String resstart = runLogin(i,LOGIN_REAUTH);
                 if (resstart!=null)
                 {
@@ -184,7 +181,7 @@ public class adfs extends CordovaPlugin {
       } else {
         Log.d(TAG,"onActivityResult LOGIN_REAUTH ERROR");
         Log.e(TAG, "RESULTCODE=" + String.valueOf(resultCode));
-        callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, data != null && data.getExtras() != null && data.getExtras().containsKey("error") ? data.getStringExtra("error") : "Fehler beim Login (1)."));
+        callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, data != null && data.getExtras() != null && data.getExtras().containsKey("error") ? data.getStringExtra("error") : "Ein unbekannter Fehler ist aufgetreten."));
       }
       isInAuthProcess=false;
     } else if (requestCode == LOGOUT_RES) {
@@ -229,10 +226,22 @@ public class adfs extends CordovaPlugin {
         Log.e(TAG, data != null ? "DATA!=NULL" : "DATA=NULL");
         Log.e(TAG, data != null && data.hasExtra("access_token") ? data.getExtras().getString("access_token") : "access_token=NULL");
         Log.e(TAG, data != null && data.hasExtra("error") ? data.getExtras().getString("error") : "ERROR=NULL");
-        callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, data != null && data.getExtras() != null && data.hasExtra("error") ? data.getStringExtra("error") : "Fehler beim Login (2)."));
+        callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, data != null && data.getExtras() != null && data.hasExtra("error") ? data.getStringExtra("error") : "Ein unbekannter Fehler ist aufgetreten."));
+        /*cordova.getActivity().runOnUiThread(new Runnable() {
+          @Override
+          public void run() {
+            if (data != null && data.hasExtra("error") && data.getStringExtra("error").contains("\r\n")) {
+              for (int n = 0; n < data.getStringExtra("error").split("\r\n").length; n++) {
+                Toast.makeText(cordova.getActivity(), data.getStringExtra("error").split("\r\n")[n], Toast.LENGTH_LONG).show();
+              }
+            } else {
+              Toast.makeText(cordova.getActivity(), (data != null && data.hasExtra("error") ? data.getStringExtra("error") : "Ein unbekannter Fehler ist aufgetreten."), Toast.LENGTH_LONG).show();
+            }
+          }
+        });*/
 
-        // Log.d(TAG,"onActivityResult LOGIN_RES EXIT APP");
-        // System.exit(1);
+        Log.d(TAG,"onActivityResult LOGIN_RES EXIT APP");
+       // System.exit(1);
       }
 
       isInAuthProcess=false;
@@ -268,9 +277,6 @@ public class adfs extends CordovaPlugin {
 
               } else {
                 callbackContext = callbackCtx;
-                PluginResult r = new PluginResult(PluginResult.Status.NO_RESULT);
-                r.setKeepCallback(true);
-                callbackContext.sendPluginResult(r);
                 String resstart =  runLogin((Intent)result.get(AccountManager.KEY_INTENT),LOGIN_REAUTH);
                 if (resstart!=null)
                 {
@@ -299,31 +305,17 @@ public class adfs extends CordovaPlugin {
 
   private String runLogin(Intent i, int requestCode)
   {
-    cordova.setActivityResultCallback(adfs.this);
+    //i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    //cordova.setActivityResultCallback(adfs.this);
     isInAuthProcess=true;
-      i.putExtra("callbackurl",cordova.getActivity().getPackageName()+".redirect");
     try {
-      cordova.getActivity().startActivityForResult(i,requestCode);
-      //cordova.startActivityForResult(adfs.this, i, requestCode);
+      cordova.startActivityForResult(adfs.this, i, requestCode);
       return null;
     }
     catch (Exception e)
     {
       return e.getMessage();
     }
-  }
-
-  public static String reverseString(String input) {
-    // Create a StringBuilder object and initialize it with the input string
-    StringBuilder builder = new StringBuilder(input);
-
-    // Use the reverse() method to reverse the contents of the StringBuilder
-    builder.reverse();
-
-    // Convert the StringBuilder back to a String
-    String reversed = builder.toString();
-
-    return reversed;
   }
 
   private void checklogin(CallbackContext callbackContext) {
@@ -357,9 +349,6 @@ public class adfs extends CordovaPlugin {
     if (acc != null) {
       Intent i = Utils.getLogoutIntent();
 
-      PluginResult r = new PluginResult(PluginResult.Status.NO_RESULT);
-      r.setKeepCallback(true);
-      callbackContext.sendPluginResult(r);
       String resstart =  runLogin(i,LOGOUT_RES);
       if (resstart!=null)
       {
@@ -367,7 +356,7 @@ public class adfs extends CordovaPlugin {
         return;
       }
 
-     // callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, acc.name));
+      callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, acc.name));
     } else {
       callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, "Kein Benutzer angemeldet"));
     }
