@@ -69,18 +69,6 @@ public class adfs extends CordovaPlugin {
     AccountManager accountManager = AccountManager.get(cordova.getActivity());
     if (acc != null) {
       try {
-        // Bundle options = new Bundle();
-
-      /* String token = accountManager.blockingGetAuthToken(acc,authTokenType,true);
-       if (token==null)
-       {
-         login(callbackContext);
-       }
-       else {
-         callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.OK, token));
-       }
-*/
-
         accountManager.getAuthToken(acc, authTokenType, null, false, new AccountManagerCallback<Bundle>() {
           @Override
           public void run(AccountManagerFuture<Bundle> future) {
@@ -129,9 +117,7 @@ public class adfs extends CordovaPlugin {
           }
         }, null);
 
-        //callbackContext.success(authToken);
-
-      } catch (Exception e) {
+    } catch (Exception e) {
         Log.e(TAG, e.getMessage(), e);
         callbackCtx.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, getErrorJson(e)));
       }
@@ -145,7 +131,7 @@ public class adfs extends CordovaPlugin {
     try {
       JSONObject result = new JSONObject();
       result.put("errortype",String.valueOf(code));
-      result.put("decription",str!=null?str:"Unknown Error");
+      result.put("description",str!=null?str:"Unknown Error");
 
       return result.toString();
     } catch (JSONException ex) {
@@ -157,7 +143,7 @@ public class adfs extends CordovaPlugin {
     try {
       JSONObject result = new JSONObject();
       result.put("errortype","unknown");
-      result.put("decription",str);
+      result.put("description",str);
 
       return result.toString();
     } catch (JSONException ex) {
@@ -169,7 +155,7 @@ public class adfs extends CordovaPlugin {
     try {
       JSONObject result = new JSONObject();
       result.put("errortype",e.getClass().getName());
-      result.put("decription",e.getMessage());
+      result.put("description",e.getMessage());
 
       return result.toString();
     } catch (JSONException ex) {
@@ -276,13 +262,8 @@ public class adfs extends CordovaPlugin {
       } else {
         Log.d(TAG,"onActivityResult LOGIN_RES ERROR");
         Log.e(TAG, "RESULTCODE 1=" + String.valueOf(resultCode));
-        Log.e(TAG, data != null ? "DATA!=NULL" : "DATA=NULL");
-        Log.e(TAG, data != null && data.hasExtra("access_token") ? data.getExtras().getString("access_token") : "access_token=NULL");
-        Log.e(TAG, data != null && data.hasExtra("error") ? data.getExtras().getString("error") : "ERROR=NULL");
         callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, data != null && data.getExtras() != null && data.hasExtra("error") ? data.getStringExtra("error") : "Fehler beim Login (2)."));
 
-        // Log.d(TAG,"onActivityResult LOGIN_RES EXIT APP");
-        // System.exit(1);
       }
 
       isInAuthProcess=false;
@@ -350,7 +331,7 @@ public class adfs extends CordovaPlugin {
     //cordova.setActivityResultCallback(adfs.this);
     isInAuthProcess=true;
     try {
-      cordova.startActivityForResult(adfs.this, i, requestCode);
+      cordova.startActivityForResult(this,i, requestCode);
       return null;
     }
     catch (Exception e)
